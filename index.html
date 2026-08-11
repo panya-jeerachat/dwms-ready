@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWMS Infrastructure Readiness Calendar · คณะวิศวกรรมศาสตร์ มมส</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#12151b; --bg-surface:#191d25; --bg-surface-2:#20262f; --bg-surface-3:#262d38;
+    --border:#2b323d; --border-soft:#232933;
+    --text-primary:#edf0f3; --text-secondary:#8d97a5; --text-tertiary:#5b6472;
+    --ready:#3fc98a; --ready-dim:#1d3229;
+    --issue:#f0a63e; --issue-dim:#3a2c17;
+    --bad:#e5646b; --bad-dim:#3a2126;
+    --none:#3a414b; --none-dim:#20242b;
+    --today:#7da6ff; --live:#3fc98a; --stale:#f0a63e;
+    --radius:10px;
+    --font-th:'IBM Plex Sans Thai',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg-base);color:var(--text-primary);font-family:var(--font-th);-webkit-font-smoothing:antialiased;line-height:1.5;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  .wrap{max-width:1240px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.top{display:flex;flex-direction:column;gap:6px;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--border-soft);}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-tertiary);}
+  h1{margin:2px 0 0;font-size:clamp(22px,3.4vw,32px);font-weight:700;letter-spacing:-.01em;}
+  .subtitle{color:var(--text-secondary);font-size:14.5px;margin-top:2px;}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:16px;}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary);}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .dot.ready{background:var(--ready);} .dot.issue{background:var(--issue);} .dot.none{background:var(--none);}
+
+  /* ---------- KPI highlight row ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  @media (max-width:720px){ .kpi-row{grid-template-columns:1fr;} }
+  .kpi-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .kpi-label{font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;}
+  .kpi-value{font-family:var(--font-mono);font-size:26px;font-weight:600;display:flex;align-items:baseline;gap:6px;}
+  .kpi-value .unit{font-size:13px;font-weight:500;color:var(--text-tertiary);}
+  .kpi-card.paper .kpi-value{color:var(--ready);}
+  .kpi-card.time .kpi-value{color:var(--today);}
+  .kpi-card.power .kpi-value{color:var(--bad);}
+
+  /* ---------- Connection status bar ---------- */
+  .conn-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:22px;}
+  .conn-left{display:flex;align-items:center;gap:10px;font-size:13px;flex-wrap:wrap;}
+  .conn-pulse{width:9px;height:9px;border-radius:50%;flex:none;position:relative;}
+  .conn-pulse.live{background:var(--live);}
+  .conn-pulse.live::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--live);animation:pulse 2s ease-out infinite;}
+  .conn-pulse.stale{background:var(--stale);} .conn-pulse.off{background:var(--text-tertiary);}
+  @keyframes pulse{0%{opacity:.7;transform:scale(.6);}100%{opacity:0;transform:scale(1.6);}}
+  .conn-text b{color:var(--text-primary);font-weight:600;} .conn-text{color:var(--text-secondary);}
+  .conn-actions{display:flex;gap:8px;}
+  .btn{font-size:12.5px;font-weight:500;padding:7px 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg-surface-2);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .btn:hover{background:var(--bg-surface-3);}
+  .btn.primary{background:var(--ready-dim);border-color:#2c5643;color:var(--ready);}
+  .btn.primary:hover{background:#204438;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .spin{animation:spin 0.8s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Streak strip ---------- */
+  section.streak{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px 16px;margin-bottom:22px;}
+  .streak-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+  .streak-title{font-size:13px;font-weight:600;color:var(--text-primary);}
+  .streak-meta{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);}
+  .streak-scroll{overflow-x:auto;padding-bottom:4px;}
+  .streak-months{display:flex;gap:14px;min-width:max-content;}
+  .streak-month{display:flex;flex-direction:column;gap:5px;}
+  .streak-month-label{font-family:var(--font-mono);font-size:10px;color:var(--text-tertiary);letter-spacing:.04em;}
+  .streak-grid{display:grid;grid-template-rows:repeat(7,9px);grid-auto-flow:column;gap:3px;}
+  .streak-cell{width:9px;height:9px;border-radius:2px;background:var(--none-dim);cursor:pointer;}
+  .streak-cell.ready{background:var(--ready);} .streak-cell.issue{background:var(--issue);}
+  .streak-cell.empty{background:transparent;cursor:default;}
+  .streak-cell.selected{outline:1.5px solid var(--today);outline-offset:1px;}
+
+  /* ---------- Layout: calendar + right column ---------- */
+  .board{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+  @media (max-width:900px){ .board{grid-template-columns:1fr;} }
+  .right-col{display:flex;flex-direction:column;gap:20px;position:sticky;top:20px;}
+  @media (max-width:900px){ .right-col{position:static;} }
+
+  section.cal{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 20px;}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .cal-nav{display:flex;align-items:center;gap:10px;}
+  .nav-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg-surface-2);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .nav-btn:hover{background:var(--bg-surface-3);}
+  .month-title{font-size:17px;font-weight:600;min-width:150px;text-align:center;}
+  .month-summary{display:flex;gap:14px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);}
+  .month-summary b{color:var(--text-primary);font-weight:600;}
+  @media (max-width:520px){ .month-summary{display:none;} }
+  .dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
+  .dow{text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);letter-spacing:.04em;padding-bottom:4px;}
+  .dow.weekend{color:#7a5a3a;}
+  .day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .day-cell{aspect-ratio:1/0.92;border-radius:8px;border:1px solid var(--border-soft);background:var(--bg-surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;}
+  .day-cell.blank{background:transparent;border:none;cursor:default;}
+  .day-cell:hover:not(.blank){border-color:var(--text-tertiary);}
+  .day-cell.selected{border-color:var(--today);box-shadow:0 0 0 1px var(--today);}
+  .day-cell .num{font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);}
+  .day-cell.ready .num,.day-cell.issue .num{color:var(--text-primary);}
+  .day-cell .status-dot{width:8px;height:8px;border-radius:50%;background:var(--none);}
+  .day-cell.ready{background:var(--ready-dim);} .day-cell.ready .status-dot{background:var(--ready);}
+  .day-cell.issue{background:var(--issue-dim);} .day-cell.issue .status-dot{background:var(--issue);}
+  .day-cell.none .status-dot{background:var(--none);}
+  .day-cell.today::after{content:'';position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--today);}
+
+  /* ---------- Right column cards ---------- */
+  .card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 20px;}
+  .card-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
+  .card-subtitle{font-size:11.5px;color:var(--text-tertiary);margin-bottom:14px;}
+
+  /* trend card */
+  .trend-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
+  .trend-num{font-family:var(--font-mono);font-size:26px;font-weight:600;}
+  .trend-change{font-family:var(--font-mono);font-size:12.5px;font-weight:600;padding:2px 7px;border-radius:5px;}
+  .trend-change.up{color:var(--ready);background:var(--ready-dim);}
+  .trend-change.down{color:var(--bad);background:var(--bad-dim);}
+  .trend-change.flat{color:var(--text-tertiary);background:var(--bg-surface-2);}
+  .trend-month-label{font-size:12px;color:var(--text-secondary);margin-bottom:12px;}
+  .sparkline{width:100%;display:block;margin-bottom:14px;}
+  .spark-bar{fill:var(--none);}
+  .spark-bar.active{fill:var(--today);}
+  .spark-bar.good{fill:var(--ready);}
+  .spark-axis{font-family:var(--font-mono);font-size:8px;fill:var(--text-tertiary);}
+  .trend-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .tstat{background:var(--bg-surface-2);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;}
+  .tstat-label{font-size:10.5px;color:var(--text-tertiary);}
+  .tstat-value{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--text-primary);margin-top:2px;}
+  .trend-interp{font-size:12px;color:var(--text-secondary);background:var(--bg-surface-2);border-left:2px solid var(--today);border-radius:6px;padding:9px 11px;line-height:1.6;}
+  .trend-empty{color:var(--text-tertiary);font-size:13px;padding:10px 0;}
+
+  /* day detail card */
+  .detail-date{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);letter-spacing:.03em;}
+  .detail-day{font-size:18px;font-weight:600;margin-top:2px;}
+  .overall-row{display:flex;align-items:baseline;gap:8px;margin:14px 0 16px;}
+  .overall-num{font-family:var(--font-mono);font-size:30px;font-weight:600;}
+  .overall-num.ready{color:var(--ready);} .overall-num.issue{color:var(--issue);}
+  .overall-label{font-size:12.5px;color:var(--text-secondary);}
+  .facet-list{display:flex;flex-direction:column;gap:1px;border-top:1px solid var(--border-soft);}
+  .facet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border-soft);font-size:13px;}
+  .facet-name{color:var(--text-secondary);}
+  .facet-status{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;flex:none;}
+  .facet-status .dot{width:8px;height:8px;}
+  .facet-status.ready{color:var(--ready);} .facet-status.issue{color:var(--issue);} .facet-status.none{color:var(--text-tertiary);}
+  .note-box{margin-top:14px;padding:10px 12px;background:var(--bg-surface-2);border-radius:8px;font-size:13px;color:var(--text-secondary);border-left:2px solid var(--issue);}
+  .timeline{margin-top:14px;border:1px solid var(--border-soft);border-radius:8px;overflow:hidden;}
+  .timeline-head{font-size:11.5px;color:var(--text-tertiary);padding:8px 12px;background:var(--bg-surface-2);border-bottom:1px solid var(--border-soft);}
+  .timeline-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13px;border-bottom:1px solid var(--border-soft);}
+  .timeline-row:last-child{border-bottom:none;}
+  .timeline-label{color:var(--text-secondary);display:flex;align-items:center;gap:7px;}
+  .timeline-value{font-family:var(--font-mono);font-weight:600;color:var(--text-primary);}
+  .timeline-value.est{color:var(--text-tertiary);font-weight:500;font-size:11.5px;}
+  .ops-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+  .ops-tag{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);background:var(--bg-surface-2);border:1px solid var(--border-soft);border-radius:6px;padding:5px 8px;}
+  .ops-tag b{color:var(--text-primary);font-weight:600;}
+  .empty-detail{color:var(--text-tertiary);font-size:13.5px;padding:10px 2px;}
+
+  footer{margin-top:26px;font-size:12px;color:var(--text-tertiary);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">DWMS · Digital Workload Management System</div>
+    <h1>Infrastructure Readiness Calendar</h1>
+    <div class="subtitle">รายงานสถานะความพร้อมโครงสร้างพื้นฐานและสิ่งสนับสนุนการเรียนการสอน · คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหาสารคาม</div>
+    <div class="legend">
+      <div class="legend-item"><span class="dot ready"></span>พร้อม</div>
+      <div class="legend-item"><span class="dot issue"></span>พบเหตุการณ์</div>
+      <div class="legend-item"><span class="dot none"></span>ไม่มีข้อมูล</div>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi-card paper">
+      <div class="kpi-label">ลดการใช้กระดาษสะสม</div>
+      <div class="kpi-value"><span id="kpiPaper">—</span><span class="unit">แผ่น</span></div>
+    </div>
+    <div class="kpi-card time">
+      <div class="kpi-label">เวลาตรวจเช็คลดลงสะสม</div>
+      <div class="kpi-value"><span id="kpiTime">—</span><span class="unit">นาที</span></div>
+    </div>
+    <div class="kpi-card power">
+      <div class="kpi-label">ระบบกระแสไฟฟ้าดับสะสม</div>
+      <div class="kpi-value"><span id="kpiPower">—</span><span class="unit">ครั้ง</span></div>
+    </div>
+  </div>
+
+  <div class="conn-bar">
+    <div class="conn-left">
+      <span class="conn-pulse off" id="connPulse"></span>
+      <span class="conn-text" id="connText">กำลังตรวจสอบสถานะข้อมูล…</span>
+    </div>
+    <div class="conn-actions">
+      <button class="btn" id="syncBtn">🔄 ซิงก์ข้อมูลล่าสุด</button>
+    </div>
+  </div>
+
+  <section class="streak">
+    <div class="streak-head">
+      <div class="streak-title">ภาพรวมปีงบประมาณ 2569 · วันต่อเนื่องที่ไม่เกิดเหตุ</div>
+      <div class="streak-meta" id="streakMeta"></div>
+    </div>
+    <div class="streak-scroll"><div class="streak-months" id="streakMonths"></div></div>
+  </section>
+
+  <div class="board">
+    <section class="cal">
+      <div class="cal-head">
+        <div class="cal-nav">
+          <button class="nav-btn" id="prevBtn">‹</button>
+          <div class="month-title" id="monthTitle"></div>
+          <button class="nav-btn" id="nextBtn">›</button>
+        </div>
+        <div class="month-summary" id="monthSummary"></div>
+      </div>
+      <div class="dow-row">
+        <div class="dow">จ</div><div class="dow">อ</div><div class="dow">พ</div>
+        <div class="dow">พฤ</div><div class="dow">ศ</div>
+        <div class="dow weekend">ส</div><div class="dow weekend">อา</div>
+      </div>
+      <div class="day-grid" id="dayGrid"></div>
+    </section>
+
+    <div class="right-col">
+      <aside class="card" id="detailPanel"></aside>
+      <aside class="card" id="trendPanel"></aside>
+    </div>
+  </div>
+
+  <footer>ข้อมูลพื้นฐาน: บันทึกสำรวจประจำวัน + สรุปผลการดำเนินงานรายเดือน ปีงบประมาณ 2569 · ค่า 0 = พร้อม, 1 = พบปัญหา, ว่าง = ไม่มีข้อมูล · ไฟล์นี้ทำงานได้ในตัวเอง ไม่ต้องพึ่งไฟล์อื่น</footer>
+</div>
+
+<script>
+/* =========================================================
+   1) EMBEDDED SNAPSHOT DATA (offline fallback)
+   ========================================================= */
+const SNAPSHOT_DATE = "11/08/2569";
+const EMBEDDED_DAILY = [{"date":"2026-01-05","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":1.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":88.88888889,"note":"-","incident_during_class":0.0,"continuous_days":1.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":1.0,"duration_min":45.0,"paperless":4.0},{"date":"2026-01-06","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":2.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-07","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":3.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-08","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":4.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":5.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-12","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":6.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-13","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":7.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-14","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":8.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-15","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":9.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":10.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-19","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":11.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-20","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":12.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-21","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":13.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-22","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":14.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":15.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-26","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":16.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-27","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":22.22222222,"note":"กระแสไฟฟ้าดับเวลา 07:30น.","incident_during_class":0.0,"continuous_days":17.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":7.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-01-28","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":18.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-29","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":19.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-01-30","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":20.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-02","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":0.0,"overall":88.88888889,"note":"ถูกถอดปลั๊กไฟฟ้าจอประชาสัมพันธ์","incident_during_class":0.0,"continuous_days":21.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":1.0,"duration_min":45.0,"paperless":4.0},{"date":"2026-02-03","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":22.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":23.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-10","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":24.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-11","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":25.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-12","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":26.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-13","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":27.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":28.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-17","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":29.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-18","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":30.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-19","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":1.0,"signage":1.0,"power":1.0,"overall":11.11111111,"note":"กระแสไฟฟ้าดับเวลา 04:00น.","incident_during_class":0.0,"continuous_days":31.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":8.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-02-20","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":32.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":33.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-24","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":1.0,"signage":1.0,"power":1.0,"overall":11.11111111,"note":"กระแสไฟฟ้าดับ","incident_during_class":0.0,"continuous_days":34.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":8.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-02-25","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":35.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-26","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":36.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-02-27","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":37.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-02","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":38.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-04","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":39.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-05","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":1.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":88.88888889,"note":"กระแสไฟฟ้าดับเวลา 07:00น.","incident_during_class":0.0,"continuous_days":40.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":1.0,"duration_min":45.0,"paperless":4.0},{"date":"2026-03-06","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":41.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":42.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-10","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":43.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-11","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":44.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-12","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":45.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-13","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":46.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":47.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-17","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":48.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-18","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":49.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-19","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":50.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-20","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":51.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":52.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-24","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":53.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-25","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":54.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-26","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":55.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-27","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":56.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-30","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":57.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-03-31","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":58.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-01","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":59.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-02","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":60.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-03","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":61.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-07","room":1.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":1.0,"signage":1.0,"power":1.0,"overall":0.0,"note":"มีการตัดกระแสไฟฟมาเมนหลักนานเกิน 30นาที","incident_during_class":1.0,"continuous_days":62.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":9.0,"duration_min":90.0,"paperless":4.0},{"date":"2026-04-08","room":1.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":1.0,"signage":1.0,"power":1.0,"overall":0.0,"note":"มีการตัดกระแสไฟฟมาเมนหลักนานเกิน 30นาที","incident_during_class":1.0,"continuous_days":63.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":9.0,"duration_min":90.0,"paperless":4.0},{"date":"2026-04-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":64.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-10","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":65.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":66.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-17","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":67.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":68.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-24","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":69.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-25","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":70.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-27","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":71.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-28","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":72.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-04-29","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":22.22222222,"note":"ไฟฟ้ามีการดับชั่วคราว","incident_during_class":0.0,"continuous_days":73.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":7.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-04-30","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":22.22222222,"note":"ฝนตกหนักระบบจ่ายกระแสไฟฟ้าตัดการทำงาน","incident_during_class":0.0,"continuous_days":74.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":7.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-05-01","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":75.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-05","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":76.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-06","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":77.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-07","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":78.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-08","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":79.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-11","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":0.0,"overall":88.88888889,"note":"จอมุมทางเดินไฟล์หมดอายุรอผู้ดูแลแก้ไข","incident_during_class":0.0,"continuous_days":80.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":1.0,"duration_min":50.0,"paperless":4.0},{"date":"2026-05-12","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":81.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-14","room":1.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":1.0,"phone":1.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":11.11111111,"note":"เบรกเกอร์เมนไฟฟ้าตัดการทำงาน","incident_during_class":0.0,"continuous_days":82.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":8.0,"duration_min":70.0,"paperless":4.0},{"date":"2026-05-15","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":83.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-18","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":84.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-19","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":85.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-20","room":0.0,"lan":0.0,"wifi":0.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":66.66666667,"note":"เบรกเกอร์เมนไฟฟ้าตัดการทำงาน","incident_during_class":0.0,"continuous_days":86.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":3.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-05-21","room":0.0,"lan":0.0,"wifi":0.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":66.66666667,"note":"เบรกเกอร์เมนไฟฟ้าตัดการทำงาน","incident_during_class":0.0,"continuous_days":87.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":3.0,"duration_min":50.0,"paperless":4.0},{"date":"2026-05-22","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":88.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-25","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":89.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-26","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":90.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-27","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":91.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-28","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":92.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-05-29","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":93.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-02","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":94.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-04","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":44.44444444,"note":"วันที่ 3 มิ.ย. 2569 มีการตัดกระแสไฟฟ้าเมนหลักเพื่อบำรุงรักษาซ่อมแซมของมหาวิทยาลัยมหาสารคาม","incident_during_class":0.0,"continuous_days":95.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":5.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-06-05","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":96.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-08","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":0.0,"overall":55.55555556,"note":"เมื่อวันที่ 7 มิ.ย. 2569 มีงูโดนไฟฟ้าแรงสูงช็อตทำให้ฟิวส์กระแสไฟฟ้าเมนหลักไม่สามารถทำงานได้ตามปกติ","incident_during_class":0.0,"continuous_days":97.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":4.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-06-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":98.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-10","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":99.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-11","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":100.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-12","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":101.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-15","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":0.0,"overall":55.55555556,"note":"-","incident_during_class":0.0,"continuous_days":102.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":4.0,"duration_min":60.0,"paperless":4.0},{"date":"2026-06-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":103.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-17","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":104.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-18","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":105.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-19","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":106.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-20","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"เข้าร่วมกีฬาสัมพันธ์ 4คณะ 2569","incident_during_class":0.0,"continuous_days":107.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-22","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":108.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":109.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-24","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":110.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-25","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":111.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-26","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":112.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-29","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":113.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-06-30","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":114.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-01","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":115.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-02","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":116.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-03","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":117.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-06","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":1.0,"signage":0.0,"power":0.0,"overall":88.88888889,"note":"เบรกเกอร์ตัดการทำงาน","incident_during_class":0.0,"continuous_days":118.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":1.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-07","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":119.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-08","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":120.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-09","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":121.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-13","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":122.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-14","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":123.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-15","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":124.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-16","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":125.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-17","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":126.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-20","room":0.0,"lan":1.0,"wifi":1.0,"cctv":1.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":1.0,"power":1.0,"overall":44.44444444,"note":"เบรกเกอร์ตัดการทำงาน","incident_during_class":0.0,"continuous_days":127.0,"morning_issue":1.0,"fixed_before_830":1.0,"auto_calc":1.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":5.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-21","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":128.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-22","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":129.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-23","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":130.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-24","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":131.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-27","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":132.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-07-31","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":133.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-03","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":134.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-04","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":135.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-05","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":136.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-06","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":137.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-07","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":138.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-10","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":139.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0},{"date":"2026-08-11","room":0.0,"lan":0.0,"wifi":0.0,"cctv":0.0,"scan":0.0,"phone":0.0,"gate":0.0,"signage":0.0,"power":0.0,"overall":100.0,"note":"-","incident_during_class":0.0,"continuous_days":140.0,"morning_issue":0.0,"fixed_before_830":0.0,"auto_calc":0.0,"check_time_reduced_min":60.0,"teaching_on_plan":1.0,"found_problem":0.0,"duration_min":30.0,"paperless":4.0}];
+const EMBEDDED_MONTHLY = [{"ym":"2026-01","label":"มกราคม 2026","room":100,"lan":95,"wifi":95.0,"cctv":95,"scan":90,"phone":95,"gate":100,"signage":95,"power":95,"overall":95.56,"change":0,"avgIssues":0.4,"avgFixMin":32.25,"prevented":5,"powerIssues":1,"streakDays":20,"paper":80,"interp":"เริ่มใช้งานระบบ","monthlyInterp":"เดือนมกราคมเป็นช่วงเริ่มต้นการใช้งานระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์ โดยมีค่าความพร้อมภาพรวมอยู่ที่ร้อยละ 95.56 ตรวจพบปัญหาเฉลี่ย 0.40 ด้านต่อวัน และสามารถป้องกันเหตุขัดข้องก่อนส่งผลกระทบต่อการจัดการเรียนการสอนได้ 5 ครั้ง ใช้เวลาตรวจสอบและแก้ไขเฉลี่ย 32.25 นาที ผลลัพธ์ดังกล่าวสะท้อนว่าระบบสามารถเริ่มสนับสนุนการตรวจสอบเชิงรุกและการบันทึกข้อมูลเชิงประจักษ์ได้ตั้งแต่ระยะเริ่มต้นของการใช้งาน","action":"กำหนดมาตรฐานการตรวจ","outcome":"ระบบเริ่มทำงานอย่างเป็นระบบ"},{"ym":"2026-02","label":"กุมภาพันธ์ 2026","room":100,"lan":88.2,"wifi":88.2,"cctv":88.2,"scan":88.2,"phone":88.2,"gate":88.2,"signage":88.4,"power":88.2,"overall":88.89,"change":-6.98,"avgIssues":1,"avgFixMin":34.41,"prevented":2,"powerIssues":2,"streakDays":17,"paper":68,"interp":"ตรวจพบเหตุเพิ่มจากการใช้งานจริง","monthlyInterp":"ค่าความพร้อมภาพรวมลดลงเหลือร้อยละ 88.89 โดยตรวจพบปัญหาเฉลี่ยเพิ่มเป็น 1.00 ด้านต่อวัน และใช้เวลาตรวจสอบและแก้ไขเฉลี่ย 34.41 นาที ข้อมูลสะท้อนว่าระบบสามารถตรวจพบเหตุขัดข้องของโครงสร้างพื้นฐานได้มากขึ้นในช่วงการใช้งานจริง ซึ่งเป็นประโยชน์ต่อการสะสมข้อมูลเพื่อวิเคราะห์แนวโน้มและวางแผนการบำรุงรักษาเชิงป้องกันในระยะต่อไป","action":"ปรับปรุง Checklist จากข้อมูลจริง","outcome":"ตรวจพบปัญหาได้เร็วขึ้น"},{"ym":"2026-03","label":"มีนาคม 2026","room":100,"lan":100,"wifi":100,"cctv":100,"scan":95.2,"phone":100,"gate":100.0,"signage":100,"power":100,"overall":99.47,"change":11.9,"avgIssues":0.05,"avgFixMin":30.71,"prevented":1,"powerIssues":0,"streakDays":21,"paper":84,"interp":"ระบบมีเสถียรภาพสูง","monthlyInterp":"เดือนมีนาคมมีค่าความพร้อมภาพรวมสูงที่สุดในช่วงการติดตาม คือร้อยละ 99.47 โดยตรวจพบปัญหาเฉลี่ยเพียง 0.05 ด้านต่อวัน และลดระยะเวลาตรวจสอบและแก้ไขเหลือเฉลี่ย 30.71 นาที ข้อมูลสะท้อนถึงเสถียรภาพของโครงสร้างพื้นฐานในช่วงเวลาดังกล่าว และแสดงให้เห็นว่ากระบวนการตรวจสอบเชิงรุกสามารถสนับสนุนการรักษาความพร้อมของระบบได้อย่างมีประสิทธิภาพ","action":"รักษามาตรฐานการตรวจสอบ","outcome":"ความพร้อมอยู่ในระดับสูง"},{"ym":"2026-04","label":"เมษายน 2026","room":87.5,"lan":75,"wifi":75,"cctv":75,"scan":75,"phone":75,"gate":87.5,"signage":75,"power":75,"overall":77.78,"change":-21.81,"avgIssues":2,"avgFixMin":41.25,"prevented":4,"powerIssues":4,"streakDays":16,"paper":64,"interp":"ผลกระทบจากไฟฟ้าภายนอก","monthlyInterp":"เดือนเมษายนมีค่าความพร้อมภาพรวมลดลงเหลือร้อยละ 77.78 ซึ่งเป็นค่าต่ำสุดของช่วงการติดตาม พร้อมทั้งตรวจพบปัญหาเฉลี่ย 2.00 ด้านต่อวัน และใช้เวลาตรวจสอบและแก้ไขเฉลี่ย 41.25 นาที ข้อมูลสอดคล้องกับการเกิดเหตุขัดข้องของระบบไฟฟ้าและการงดจ่ายกระแสไฟฟ้าจากระบบสาธารณูปโภคภายนอกที่ส่งผลกระทบต่อหลายระบบพร้อมกัน จึงสะท้อนอิทธิพลของปัจจัยภายนอกต่อระดับความพร้อมของโครงสร้างพื้นฐาน แม้เหตุการณ์บางส่วนจะอยู่นอกเหนือขอบเขตการควบคุมของหน่วยงาน","action":"จัดทำแผนรองรับไฟฟ้าดับและกำหนดจุดเสี่ยง","outcome":"ลดผลกระทบจากปัจจัยภายนอก"},{"ym":"2026-05","label":"พฤษภาคม 2026","room":94.7,"lan":94.7,"wifi":94.7,"cctv":84.2,"scan":94.7,"phone":94.7,"gate":100.0,"signage":78.9,"power":84.2,"overall":91.23,"change":17.29,"avgIssues":0.79,"avgFixMin":35.79,"prevented":3,"powerIssues":3,"streakDays":19,"paper":76,"interp":"ความพร้อมกลับสู่ระดับปกติ","monthlyInterp":"หลังจากเหตุการณ์ในเดือนเมษายน ค่าความพร้อมภาพรวมปรับเพิ่มขึ้นเป็นร้อยละ 91.23 ขณะที่จำนวนปัญหาเฉลี่ยลดลงเหลือ 0.79 ด้านต่อวัน และระยะเวลาตรวจสอบและแก้ไขลดลงเหลือ 35.79 นาที แนวโน้มดังกล่าวสะท้อนถึงการฟื้นตัวของระบบและการนำข้อมูลจากการติดตามในช่วงก่อนหน้ามาใช้สนับสนุนการตรวจสอบเชิงรุกและการบริหารจัดการความเสี่ยงอย่างต่อเนื่อง","action":"ติดตามจุดเสี่ยงอย่างต่อเนื่อง","outcome":"ระบบฟื้นตัวและมีเสถียรภาพ"},{"ym":"2026-06","label":"มิถุนายน 2026","room":100,"lan":85.7,"wifi":85.7,"cctv":85.7,"scan":100,"phone":100,"gate":100.0,"signage":85.7,"power":95.2,"overall":93.12,"change":2.07,"avgIssues":0.62,"avgFixMin":34.29,"prevented":3,"powerIssues":1,"streakDays":21,"paper":84,"interp":"ความพร้อมเพิ่มขึ้นต่อเนื่อง","monthlyInterp":"เดือนมิถุนายนมีค่าความพร้อมภาพรวมเพิ่มขึ้นเป็นร้อยละ 93.12 โดยจำนวนปัญหาเฉลี่ยลดลงเหลือ 0.62 ด้านต่อวัน และระยะเวลาตรวจสอบและแก้ไขลดลงเหลือเฉลี่ย 34.29 นาที ข้อมูลแสดงแนวโน้มของการรักษาเสถียรภาพของโครงสร้างพื้นฐานและการลดภาระการแก้ไขปัญหาเมื่อเทียบกับเดือนก่อนหน้า สะท้อนว่าการติดตามข้อมูลอย่างต่อเนื่องช่วยสนับสนุนการตัดสินใจด้านการบำรุงรักษาเชิงป้องกันและการรักษาความต่อเนื่องของการให้บริการ","action":"ปรับ KPI และความถี่การตรวจสอบ","outcome":"ประสิทธิภาพดีขึ้นต่อเนื่อง"},{"ym":"2026-07","label":"กรกฎาคม 2026","room":100,"lan":94.7,"wifi":94.7,"cctv":94.7,"scan":100,"phone":100,"gate":94.7,"signage":94.7,"power":94.7,"overall":96.49,"change":3.62,"avgIssues":0.32,"avgFixMin":30,"prevented":1,"powerIssues":1,"streakDays":19,"paper":76,"interp":"ระบบมีเสถียรภาพและมาตรการบริหารเริ่มเห็นผล","monthlyInterp":"เดือนกรกฎาคมมีค่าความพร้อมภาพรวมเพิ่มขึ้นเป็นร้อยละ 96.49 พร้อมลดจำนวนปัญหาเฉลี่ยเหลือ 0.32 ด้านต่อวัน และลดระยะเวลาตรวจสอบและแก้ไขเหลือเฉลี่ย 30 นาที แม้ยังพบเหตุขัดข้องของระบบไฟฟ้า 1 ครั้ง แต่ไม่ส่งผลกระทบต่อการดำเนินงานโดยรวม สะท้อนว่ามาตรการที่กำหนดจากข้อมูลการติดตามในช่วงก่อนหน้าช่วยลดความเสี่ยงและเพิ่มเสถียรภาพของโครงสร้างพื้นฐานได้อย่างต่อเนื่อง","action":"ประเมินผลและปรับมาตรฐาน","outcome":"ระบบมีเสถียรภาพและพัฒนาอย่างต่อเนื่อง"},{"ym":"2026-08","label":"สิงหาคม 2026","room":100,"lan":100,"wifi":100,"cctv":100,"scan":100,"phone":100,"gate":100,"signage":100,"power":100,"overall":100,"change":3.64,"avgIssues":0,"avgFixMin":30,"prevented":0,"powerIssues":0,"streakDays":5,"paper":10,"interp":"ข้อมูลยังไม่ครบเดือน","monthlyInterp":"ข้อมูลยังไม่ครบเดือน","action":"ข้อมูลยังไม่ครบเดือน","outcome":"ข้อมูลยังไม่ครบเดือน"}];
+
+/* =========================================================
+   2) CONFIG — real live Google Sheet sources
+   ========================================================= */
+const DAILY_SHEET_ID = '1N2A8-U3ynhY1tBnuJAAGGdTwSclEePQX_f84suEw5_k';
+const MONTHLY_SHEET_ID = '1j7WzimYoBPJW4O87d3N2Xyy55GPxXJAdd203j-94yHk';
+const DEFAULT_DAILY_URL = `https://docs.google.com/spreadsheets/d/${DAILY_SHEET_ID}/export?format=csv&gid=0`;
+const DEFAULT_MONTHLY_URL = `https://docs.google.com/spreadsheets/d/${MONTHLY_SHEET_ID}/export?format=csv&gid=0`;
+
+const FACETS = [
+  {key:'room',    label:'ห้องเรียน / ห้องประชุม', hint:'ตรวจ 47 ห้อง'},
+  {key:'lan',     label:'Network LAN',            hint:'ตรวจ 7 อาคาร'},
+  {key:'wifi',    label:'Network WiFi',           hint:'ตรวจ 94 จุด'},
+  {key:'cctv',    label:'CCTV',                   hint:'132 จุด'},
+  {key:'scan',    label:'สแกนลงเวลา'},
+  {key:'phone',   label:'โทรศัพท์ภายใน'},
+  {key:'gate',    label:'ไม้กั้นเปิด/ปิด'},
+  {key:'signage', label:'จอประชาสัมพันธ์'},
+  {key:'power',   label:'ระบบกระแสไฟฟ้า'},
+];
+const FACET_KEYS = FACETS.map(f => f.key);
+const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const MONTHS_TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DOW_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const LS_LAST_SYNC = 'dwms_last_sync';
+
+/* =========================================================
+   3) CSV PARSER
+   ========================================================= */
+function parseCsvText(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field = ''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r[0] && r[0].trim() !== ''));
+}
+
+function parseThaiOrIsoDate(s){
+  s = (s || '').trim();
+  if(!s) return null;
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){
+    let [, d, mo, y] = m.map(Number);
+    if(y > 2400) y -= 543;
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m){
+    let [, y, mo, d] = m.map(Number);
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return null;
+}
+
+function numOrNull(v){
+  if(v === undefined || v === null) return null;
+  v = String(v).trim();
+  if(v === '') return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? v : n;
+}
+
+function rowsToDailyRecords(rows){
+  if(!rows.length) return [];
+  const body = rows[0][0] && /วันที่|date/i.test(rows[0][0]) ? rows.slice(1) : rows;
+  const records = [];
+  for(const r of body){
+    const dateKey = parseThaiOrIsoDate(r[0]);
+    if(!dateKey) continue;
+    records.push({
+      date: dateKey,
+      room: numOrNull(r[1]), lan: numOrNull(r[2]), wifi: numOrNull(r[3]),
+      cctv: numOrNull(r[4]), scan: numOrNull(r[5]), phone: numOrNull(r[6]),
+      gate: numOrNull(r[7]), signage: numOrNull(r[8]), power: numOrNull(r[9]),
+      overall: numOrNull(r[10]), note: (r[11] || '').trim(),
+      incident_during_class: numOrNull(r[12]), continuous_days: numOrNull(r[13]),
+      morning_issue: numOrNull(r[14]), fixed_before_830: numOrNull(r[15]),
+      auto_calc: numOrNull(r[16]), check_time_reduced_min: numOrNull(r[17]),
+      teaching_on_plan: numOrNull(r[18]), found_problem: numOrNull(r[19]),
+      duration_min: numOrNull(r[20]), paperless: numOrNull(r[21]),
+    });
+  }
+  return records;
+}
+
+const MONTHS_MAP_TH = {};
+MONTHS_TH.forEach((name,i) => MONTHS_MAP_TH[name] = i+1);
+
+function parseThaiMonthYearLabel(s){
+  s = (s || '').trim();
+  for(const name of MONTHS_TH){
+    if(s.indexOf(name) === 0){
+      const rest = s.slice(name.length).trim();
+      const y = parseInt(rest, 10);
+      if(!Number.isNaN(y)) return { month: MONTHS_MAP_TH[name], year: y, label: s };
+    }
+  }
+  return null;
+}
+
+function rowsToMonthlyRecords(rows){
+  if(!rows.length) return [];
+  const body = rows[0][0] && /เดือน|month/i.test(rows[0][0]) ? rows.slice(1) : rows;
+  const records = [];
+  for(const r of body){
+    const parsed = parseThaiMonthYearLabel(r[0]);
+    if(!parsed) continue;
+    // require at least the overall-readiness column to have a value to count as real data
+    if(r[10] === undefined || String(r[10]).trim() === '') continue;
+    records.push({
+      ym: `${parsed.year}-${String(parsed.month).padStart(2,'0')}`,
+      label: parsed.label,
+      room: numOrNull(r[1]), lan: numOrNull(r[2]), wifi: numOrNull(r[3]), cctv: numOrNull(r[4]),
+      scan: numOrNull(r[5]), phone: numOrNull(r[6]), gate: numOrNull(r[7]), signage: numOrNull(r[8]),
+      power: numOrNull(r[9]), overall: numOrNull(r[10]), change: numOrNull(r[11]),
+      avgIssues: numOrNull(r[12]), avgFixMin: numOrNull(r[13]), prevented: numOrNull(r[14]),
+      powerIssues: numOrNull(r[15]), streakDays: numOrNull(r[16]), paper: numOrNull(r[17]),
+      interp: (r[18]||'').trim(), monthlyInterp: (r[19]||'').trim(),
+      action: (r[20]||'').trim(), outcome: (r[21]||'').trim(),
+    });
+  }
+  return records;
+}
+
+/* =========================================================
+   4) STATE
+   ========================================================= */
+let DAILY = EMBEDDED_DAILY;
+let MONTHLY = EMBEDDED_MONTHLY;
+let dailyByDate = {};
+let monthlyByYm = {};
+let dataSource = 'snapshot'; // 'snapshot' | 'live' | 'partial'
+let lastSyncAt = null;
+
+function indexData(){
+  dailyByDate = {}; DAILY.forEach(r => dailyByDate[r.date] = r);
+  monthlyByYm = {}; MONTHLY.forEach(r => monthlyByYm[r.ym] = r);
+}
+indexData();
+
+const sortedDates = () => Object.keys(dailyByDate).sort();
+const sortedYms = () => Object.keys(monthlyByYm).sort();
+let lastD = sortedDates()[sortedDates().length-1].split('-').map(Number);
+let viewYear = lastD[0], viewMonth = lastD[1];
+let selectedKey = sortedDates()[sortedDates().length-1];
+
+const today = new Date();
+function toKey(y,m,d){ return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+const todayKey = toKey(today.getFullYear(), today.getMonth()+1, today.getDate());
+
+/* =========================================================
+   5) STATUS HELPERS
+   ========================================================= */
+function beYear(ceYear){ return ceYear + 543; }
+function dayStatus(rec){
+  if(!rec) return 'none';
+  let sawValue = false, anyIssue = false;
+  for(const k of FACET_KEYS){
+    const v = rec[k];
+    if(v === 1){ anyIssue = true; sawValue = true; }
+    else if(v === 0){ sawValue = true; }
+  }
+  if(anyIssue) return 'issue';
+  if(sawValue) return 'ready';
+  return 'none';
+}
+function facetStatus(v){
+  if(v === 1) return 'issue';
+  if(v === 0) return 'ready';
+  return 'none';
+}
+
+/* =========================================================
+   6) RENDER: KPI highlight row (real-time, from DAILY data)
+   ========================================================= */
+function renderKpiRow(){
+  const totalDays = DAILY.length;
+  const paperTotal = 4 * totalDays;
+  const timeTotal = 60 * totalDays;
+  const powerOutages = DAILY.filter(r => r.power === 1).length;
+  document.getElementById('kpiPaper').textContent = paperTotal.toLocaleString('th-TH');
+  document.getElementById('kpiTime').textContent = timeTotal.toLocaleString('th-TH');
+  document.getElementById('kpiPower').textContent = powerOutages.toLocaleString('th-TH');
+}
+
+/* =========================================================
+   7) RENDER: connection bar
+   ========================================================= */
+function renderConnBar(){
+  const pulse = document.getElementById('connPulse');
+  const text = document.getElementById('connText');
+
+  pulse.className = 'conn-pulse';
+  if(dataSource === 'live'){
+    pulse.classList.add('live');
+    const t = lastSyncAt ? formatDateTime(lastSyncAt) : '';
+    text.innerHTML = `เชื่อมต่อ Google Sheet สดแล้ว (รายวัน + รายเดือน) · ซิงก์ล่าสุด <b>${t}</b>`;
+  } else if(dataSource === 'partial'){
+    pulse.classList.add('stale');
+    const t = lastSyncAt ? formatDateTime(lastSyncAt) : '';
+    text.innerHTML = `เชื่อมต่อสำเร็จบางส่วน · ซิงก์ล่าสุด <b>${t}</b> · ตรวจสอบลิงก์ที่ยังไม่สำเร็จในปุ่ม "เชื่อมข้อมูล"`;
+  } else {
+    pulse.classList.add('off');
+    text.innerHTML = `ยังไม่ได้เชื่อมต่อ Google Sheet สด · แสดงข้อมูล snapshot ที่บันทึกไว้ในไฟล์ ณ <b>${SNAPSHOT_DATE}</b>`;
+  }
+}
+function formatDateTime(d){
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${beYear(d.getFullYear())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* =========================================================
+   8) RENDER: calendar
+   ========================================================= */
+function renderMonthTitle(){
+  document.getElementById('monthTitle').textContent = `${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)}`;
+}
+function renderCalendar(){
+  renderMonthTitle();
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  const firstOfMonth = new Date(viewYear, viewMonth-1, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+  let counts = {ready:0, issue:0, none:0};
+
+  for(let i=0;i<startOffset;i++){
+    const blank = document.createElement('div'); blank.className = 'day-cell blank'; grid.appendChild(blank);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const key = toKey(viewYear, viewMonth, d);
+    const rec = dailyByDate[key];
+    const status = dayStatus(rec);
+    counts[status]++;
+    const cell = document.createElement('div');
+    cell.className = `day-cell ${status}`;
+    if(key === todayKey) cell.classList.add('today');
+    if(key === selectedKey) cell.classList.add('selected');
+    cell.innerHTML = `<div class="num">${d}</div><div class="status-dot"></div>`;
+    cell.addEventListener('click', () => { selectedKey = key; renderCalendar(); renderDetail(); renderStreak(); });
+    grid.appendChild(cell);
+  }
+  document.getElementById('monthSummary').innerHTML =
+    `<span>🟢 <b>${counts.ready}</b></span><span>🟡 <b>${counts.issue}</b></span><span>⚪ <b>${counts.none}</b></span>`;
+
+  renderTrend();
+}
+
+/* =========================================================
+   9) RENDER: monthly KPI trend panel (right column, top)
+   ========================================================= */
+function renderTrend(){
+  const panel = document.getElementById('trendPanel');
+  const yms = sortedYms();
+  const currentYm = `${viewYear}-${String(viewMonth).padStart(2,'0')}`;
+  const rec = monthlyByYm[currentYm];
+
+  const sparkW = 300, sparkH = 60, barGap = 4;
+  const barW = yms.length ? Math.max(6, (sparkW - barGap*(yms.length-1)) / yms.length) : 0;
+  let bars = '';
+  yms.forEach((ym, i) => {
+    const m = monthlyByYm[ym];
+    const v = (m.overall === null || m.overall === undefined) ? 0 : m.overall;
+    const h = Math.max(2, (v/100) * (sparkH-12));
+    const x = i * (barW + barGap);
+    const y = sparkH - h;
+    const cls = ym === currentYm ? 'active' : (v >= 95 ? 'good' : '');
+    bars += `<rect class="spark-bar ${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2"></rect>`;
+  });
+  const sparkSvg = yms.length
+    ? `<svg class="sparkline" viewBox="0 0 ${sparkW} ${sparkH}" preserveAspectRatio="none" height="60">${bars}</svg>`
+    : '';
+
+  if(!rec){
+    panel.innerHTML = `
+      <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
+      <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์</div>
+      ${sparkSvg}
+      <div class="trend-empty">ยังไม่มีข้อมูลสรุปสำหรับ ${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)}</div>
+    `;
+    return;
+  }
+
+  const changeVal = rec.change;
+  const changeCls = (changeVal === null) ? 'flat' : changeVal > 0 ? 'up' : changeVal < 0 ? 'down' : 'flat';
+  const changeArrow = (changeVal === null) ? '' : changeVal > 0 ? '▲' : changeVal < 0 ? '▼' : '■';
+  const changeTxt = (changeVal === null) ? '—' : `${changeArrow} ${Math.abs(changeVal).toFixed(2)}%`;
+
+  panel.innerHTML = `
+    <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
+    <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์</div>
+    ${sparkSvg}
+    <div class="trend-overall">
+      <div class="trend-num">${rec.overall !== null ? rec.overall : '—'}%</div>
+      <div class="trend-change ${changeCls}">${changeTxt}</div>
+    </div>
+    <div class="trend-month-label">ความพร้อมภาพรวม · ${rec.label}</div>
+    <div class="trend-stats">
+      <div class="tstat"><div class="tstat-label">เฉลี่ยพบปัญหา/วัน</div><div class="tstat-value">${fmt(rec.avgIssues)} ด้าน</div></div>
+      <div class="tstat"><div class="tstat-label">ตรวจสอบ/แก้ไขเฉลี่ย</div><div class="tstat-value">${fmt(rec.avgFixMin)} นาที</div></div>
+      <div class="tstat"><div class="tstat-label">ป้องกันเหตุสำเร็จ</div><div class="tstat-value">${fmt(rec.prevented)} ครั้ง</div></div>
+      <div class="tstat"><div class="tstat-label">ระบบไฟฟ้ามีปัญหา</div><div class="tstat-value">${fmt(rec.powerIssues)} ครั้ง</div></div>
+      <div class="tstat"><div class="tstat-label">วันต่อเนื่องปกติ</div><div class="tstat-value">${fmt(rec.streakDays)} วัน</div></div>
+      <div class="tstat"><div class="tstat-label">ลดกระดาษเดือนนี้</div><div class="tstat-value">${fmt(rec.paper)} แผ่น</div></div>
+    </div>
+    ${rec.monthlyInterp ? `<div class="trend-interp">${escapeHtml(rec.interp ? rec.interp + ' — ' : '')}${escapeHtml(rec.monthlyInterp)}</div>` : ''}
+  `;
+}
+function fmt(v){ return (v === null || v === undefined) ? '—' : v; }
+
+/* =========================================================
+   10) RENDER: day detail card
+   ========================================================= */
+function renderDetail(){
+  const panel = document.getElementById('detailPanel');
+  const rec = dailyByDate[selectedKey];
+  const [y,m,d] = selectedKey.split('-').map(Number);
+  const dow = DOW_TH[new Date(y,m-1,d).getDay()];
+
+  if(!rec){
+    panel.innerHTML = `
+      <div class="card-title">รายละเอียดรายวัน</div>
+      <div class="detail-date">${d} ${MONTHS_TH[m-1]} ${beYear(y)} · วัน${dow}</div>
+      <div class="empty-detail">ไม่มีข้อมูลการตรวจสำหรับวันที่นี้</div>`;
+    return;
+  }
+
+  const overallStatus = (rec.overall !== null && rec.overall < 100) ? 'issue' : 'ready';
+  const facetsHtml = FACETS.map(f => {
+    const st = facetStatus(rec[f.key]);
+    const label = st==='ready' ? 'พร้อม' : st==='issue' ? 'พบเหตุการณ์' : 'ไม่มีข้อมูล';
+    return `<div class="facet-row">
+      <div class="facet-name">${f.label}${f.hint ? `<br><span style="font-size:11px;color:var(--text-tertiary)">${f.hint}</span>` : ''}</div>
+      <div class="facet-status ${st}"><span class="dot ${st}"></span>${label}</div>
+    </div>`;
+  }).join('');
+
+  const noteHtml = (rec.note && rec.note !== '-') ? `<div class="note-box">📝 ${escapeHtml(rec.note)}</div>` : '';
+  const timelineHtml = buildTimelineHtml(rec);
+
+  const tags = [];
+  if(rec.continuous_days !== null) tags.push(`<div class="ops-tag">วันต่อเนื่องไม่เกิดเหตุ: <b>${rec.continuous_days}</b></div>`);
+  if(rec.incident_during_class !== null) tags.push(`<div class="ops-tag">เหตุขัดข้องระหว่างเรียน: <b>${rec.incident_during_class==1?'พบ':'ไม่พบ'}</b></div>`);
+  if(rec.teaching_on_plan !== null) tags.push(`<div class="ops-tag">การเรียนการสอนตามแผน: <b>${rec.teaching_on_plan==1?'ใช่':'ไม่'}</b></div>`);
+  if(rec.duration_min !== null) tags.push(`<div class="ops-tag">ระยะเวลาดำเนินการ: <b>${rec.duration_min} นาที</b></div>`);
+
+  panel.innerHTML = `
+    <div class="card-title">รายละเอียดรายวัน</div>
+    <div class="detail-date">${MONTHS_TH[m-1]} ${beYear(y)} · วัน${dow}</div>
+    <div class="detail-day">${d} ${MONTHS_TH_SHORT[m-1]}</div>
+    <div class="overall-row">
+      <div class="overall-num ${overallStatus}">${rec.overall !== null ? Math.round(rec.overall*100)/100 : '—'}%</div>
+      <div class="overall-label">ความพร้อมภาพรวม</div>
+    </div>
+    <div class="facet-list">${facetsHtml}</div>
+    ${noteHtml}
+    ${timelineHtml}
+    <div class="ops-tags">${tags.join('')}</div>
+  `;
+}
+
+/* Extract "เวลาตรวจพบ" from the note if a clock time is mentioned there
+   (e.g. "กระแสไฟฟ้าดับเวลา 07:30น."); otherwise fall back to the
+   standard morning inspection time. "เวลาดำเนินการเสร็จ" is then the
+   detected time plus the recorded ระยะเวลาดำเนินการ (นาที). */
+const DEFAULT_CHECK_TIME = '08:00';
+function extractTimeFromNote(note){
+  if(!note) return null;
+  const m = note.match(/(\d{1,2}):(\d{2})\s*น/);
+  if(!m) return null;
+  const hh = Math.min(23, parseInt(m[1],10));
+  const mm = Math.min(59, parseInt(m[2],10));
+  return hh*60 + mm;
+}
+function minutesToClock(mins){
+  mins = ((mins % 1440) + 1440) % 1440;
+  const hh = Math.floor(mins/60), mm = mins % 60;
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+function buildTimelineHtml(rec){
+  const status = dayStatus(rec);
+  if(status !== 'issue') return '';
+  const noteTime = extractTimeFromNote(rec.note);
+  const isEstimate = noteTime === null;
+  const detectedMin = noteTime !== null ? noteTime : (parseInt(DEFAULT_CHECK_TIME.split(':')[0],10)*60 + parseInt(DEFAULT_CHECK_TIME.split(':')[1],10));
+  const duration = rec.duration_min !== null ? rec.duration_min : null;
+  const completedMin = duration !== null ? detectedMin + duration : null;
+
+  return `
+    <div class="timeline">
+      <div class="timeline-head">ไทม์ไลน์การดำเนินการแก้ไข${isEstimate ? ' (เวลาตรวจพบประมาณจากรอบตรวจเช้า)' : ' (เวลาตามที่บันทึกในหมายเหตุ)'}</div>
+      <div class="timeline-row">
+        <div class="timeline-label">🔍 เวลาตรวจพบ</div>
+        <div class="timeline-value ${isEstimate?'est':''}">${minutesToClock(detectedMin)}</div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-label">✅ เวลาดำเนินการเสร็จ</div>
+        <div class="timeline-value ${isEstimate?'est':''}">${completedMin !== null ? minutesToClock(completedMin) : '—'}</div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-label">⏱ ระยะเวลาดำเนินการ</div>
+        <div class="timeline-value">${duration !== null ? duration + ' นาที' : '—'}</div>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================
+   11) RENDER: streak strip
+   ========================================================= */
+function renderStreak(){
+  const container = document.getElementById('streakMonths');
+  container.innerHTML = '';
+  const dates = sortedDates();
+  const first = dates[0].split('-').map(Number);
+  const last = dates[dates.length-1].split('-').map(Number);
+
+  let y = first[0], m = first[1];
+  const monthsHtml = [];
+  let guard = 0;
+  while((y < last[0] || (y === last[0] && m <= last[1])) && guard < 60){
+    guard++;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const firstOfMonth = new Date(y, m-1, 1);
+    const startOffset = (firstOfMonth.getDay() + 6) % 7;
+    let cellsHtml = '';
+    for(let i=0;i<startOffset;i++) cellsHtml += `<div class="streak-cell empty"></div>`;
+    for(let d=1; d<=daysInMonth; d++){
+      const key = toKey(y,m,d);
+      const rec = dailyByDate[key];
+      const status = dayStatus(rec);
+      const cls = status === 'none' ? '' : status;
+      const sel = key === selectedKey ? ' selected' : '';
+      cellsHtml += `<div class="streak-cell ${cls}${sel}" data-key="${key}" title="${d} ${MONTHS_TH[m-1]} ${beYear(y)}"></div>`;
+    }
+    monthsHtml.push(`<div class="streak-month">
+        <div class="streak-month-label">${MONTHS_TH_SHORT[m-1]} ${String(beYear(y)).slice(-2)}</div>
+        <div class="streak-grid">${cellsHtml}</div>
+      </div>`);
+    m++; if(m>12){m=1;y++;}
+  }
+  container.innerHTML = monthsHtml.join('');
+
+  container.querySelectorAll('.streak-cell[data-key]').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.getAttribute('data-key');
+      const [yy,mm] = key.split('-').map(Number);
+      viewYear = yy; viewMonth = mm; selectedKey = key;
+      renderCalendar(); renderDetail(); renderStreak();
+    });
+  });
+
+  const latest = DAILY[DAILY.length-1];
+  document.getElementById('streakMeta').textContent =
+    latest && latest.continuous_days !== null
+      ? `ล่าสุดต่อเนื่อง ${latest.continuous_days} วันโดยไม่เกิดเหตุขัดข้องระหว่างเรียน`
+      : '';
+}
+
+function renderAll(){
+  indexData();
+  const dates = sortedDates();
+  if(!dates.includes(selectedKey)) selectedKey = dates[dates.length-1];
+  renderKpiRow();
+  renderConnBar();
+  renderCalendar();
+  renderDetail();
+  renderStreak();
+}
+
+/* =========================================================
+   12) SYNC / CONNECT LOGIC
+   ========================================================= */
+function toDirectCsvUrl(url){
+  url = (url || '').trim();
+  if(url.includes('output=csv') || url.includes('/pub?') || url.includes('format=csv')) return url;
+  const editMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(editMatch && !url.includes('/d/e/')){
+    const gidMatch = url.match(/gid=([0-9]+)/);
+    const gid = gidMatch ? gidMatch[1] : '0';
+    return `https://docs.google.com/spreadsheets/d/${editMatch[1]}/export?format=csv&gid=${gid}`;
+  }
+  return url;
+}
+
+async function fetchCsv(url){
+  const fetchUrl = toDirectCsvUrl(url) + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const res = await fetch(fetchUrl, {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.text();
+}
+
+async function syncFromSheets(){
+  const syncBtn = document.getElementById('syncBtn');
+  syncBtn.disabled = true;
+  syncBtn.innerHTML = `<span class="spin">⟳</span> กำลังซิงก์…`;
+
+  let dailyOk = false, monthlyOk = false;
+
+  try{
+    const text = await fetchCsv(DEFAULT_DAILY_URL);
+    const records = rowsToDailyRecords(parseCsvText(text));
+    if(records.length){ DAILY = records; dailyOk = true; }
+  } catch(err){ /* keep previous data on failure */ }
+
+  try{
+    const text = await fetchCsv(DEFAULT_MONTHLY_URL);
+    const records = rowsToMonthlyRecords(parseCsvText(text));
+    if(records.length){ MONTHLY = records; monthlyOk = true; }
+  } catch(err){ /* keep previous data on failure */ }
+
+  if(dailyOk && monthlyOk){ dataSource = 'live'; }
+  else if(dailyOk || monthlyOk){ dataSource = 'partial'; }
+  else { dataSource = dataSource === 'live' ? 'partial' : 'snapshot'; }
+
+  if(dailyOk || monthlyOk){
+    lastSyncAt = new Date();
+    localStorage.setItem(LS_LAST_SYNC, lastSyncAt.toISOString());
+  }
+
+  renderAll();
+
+  syncBtn.disabled = false;
+  syncBtn.innerHTML = '🔄 ซิงก์ข้อมูลล่าสุด';
+}
+
+document.getElementById('syncBtn').addEventListener('click', () => syncFromSheets());
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  viewMonth--; if(viewMonth < 1){ viewMonth = 12; viewYear--; }
+  renderCalendar();
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  viewMonth++; if(viewMonth > 12){ viewMonth = 1; viewYear++; }
+  renderCalendar();
+});
+
+/* =========================================================
+   14) INIT
+   ========================================================= */
+renderAll();
+syncFromSheets(); // auto-connect to the live DWMS sheets on load
+</script>
+</body>
+</html>
