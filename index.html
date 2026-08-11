@@ -271,6 +271,31 @@ const FACETS = [
   {key:'power',   label:'ระบบกระแสไฟฟ้า'},
 ];
 const FACET_KEYS = FACETS.map(f => f.key);
+// Dynamic hints (facility counts like "ตรวจ 47 ห้อง") — updated from the live
+// Google Sheet header row when it syncs, so a change to facility counts in
+// the sheet (e.g. more rooms added) is reflected without editing this file.
+const FACET_HINTS = {};
+FACETS.forEach(f => { if(f.hint) FACET_HINTS[f.key] = f.hint; });
+function extractHeaderHint(headerText){
+  if(!headerText) return null;
+  let m = headerText.match(/ตรวจ\s*(\d+)\s*(ห้อง|อาคาร|จุด)/);
+  if(m) return `ตรวจ ${m[1]} ${m[2]}`;
+  m = headerText.match(/(\d+)\s*(ห้อง|อาคาร|จุด)/);
+  if(m) return `${m[1]} ${m[2]}`;
+  return null;
+}
+function parseDailyHeaderHints(headerRow){
+  if(!headerRow) return null;
+  const positions = {1:'room', 2:'lan', 3:'wifi', 4:'cctv'};
+  const hints = {};
+  let found = false;
+  Object.keys(positions).forEach(idx => {
+    const key = positions[idx];
+    const h = extractHeaderHint(headerRow[idx]);
+    if(h){ hints[key] = h; found = true; }
+  });
+  return found ? hints : null;
+}
 const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const MONTHS_TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -327,8 +352,10 @@ function numOrNull(v){
 }
 
 function rowsToDailyRecords(rows){
-  if(!rows.length) return [];
-  const body = rows[0][0] && /วันที่|date/i.test(rows[0][0]) ? rows.slice(1) : rows;
+  if(!rows.length) return {records:[], hints:null};
+  const hasHeader = rows[0][0] && /วันที่|date/i.test(rows[0][0]);
+  const hints = hasHeader ? parseDailyHeaderHints(rows[0]) : null;
+  const body = hasHeader ? rows.slice(1) : rows;
   const records = [];
   for(const r of body){
     const dateKey = parseThaiOrIsoDate(r[0]);
@@ -346,7 +373,7 @@ function rowsToDailyRecords(rows){
       duration_min: numOrNull(r[20]), paperless: numOrNull(r[21]),
     });
   }
-  return records;
+  return {records, hints};
 }
 
 const MONTHS_MAP_TH = {};
@@ -596,7 +623,7 @@ function renderDetail(){
     const st = facetStatus(rec[f.key]);
     const label = st==='ready' ? 'พร้อม' : st==='issue' ? 'พบเหตุการณ์' : 'ไม่มีข้อมูล';
     return `<div class="facet-row">
-      <div class="facet-name">${f.label}${f.hint ? `<br><span style="font-size:11px;color:var(--text-tertiary)">${f.hint}</span>` : ''}</div>
+      <div class="facet-name">${f.label}${FACET_HINTS[f.key] ? `<br><span style="font-size:11px;color:var(--text-tertiary)">${FACET_HINTS[f.key]}</span>` : ''}</div>
       <div class="facet-status ${st}"><span class="dot ${st}"></span>${label}</div>
     </div>`;
   }).join('');
@@ -625,11 +652,13 @@ function renderDetail(){
   `;
 }
 
-/* Extract "เวลาตรวจพบ" from the note if a clock time is mentioned there
-   (e.g. "กระแสไฟฟ้าดับเวลา 07:30น."); otherwise fall back to the
-   standard morning inspection time. "เวลาดำเนินการเสร็จ" is then the
-   detected time plus the recorded ระยะเวลาดำเนินการ (นาที). */
-const DEFAULT_CHECK_TIME = '08:00';
+/* "เวลาตรวจพบ" comes only from an actual clock time mentioned in the
+   หมายเหตุ note for that day (e.g. "กระแสไฟฟ้าดับเวลา 07:30น."), never a
+   fabricated default — if the sheet didn't record a time, we say so
+   plainly instead of showing a constant placeholder. "เวลาดำเนินการเสร็จ"
+   is the detected time plus the recorded ระยะเวลาดำเนินการ (นาที), and
+   "ระยะเวลาแก้ไขที่ใช้" is then computed back out as the difference
+   between the two clock times (not just echoed from the sheet column). */
 function extractTimeFromNote(note){
   if(!note) return null;
   const m = note.match(/(\d{1,2}):(\d{2})\s*น/);
@@ -646,25 +675,43 @@ function minutesToClock(mins){
 function buildTimelineHtml(rec){
   const status = dayStatus(rec);
   if(status !== 'issue') return '';
-  const noteTime = extractTimeFromNote(rec.note);
-  const isEstimate = noteTime === null;
-  const detectedMin = noteTime !== null ? noteTime : (parseInt(DEFAULT_CHECK_TIME.split(':')[0],10)*60 + parseInt(DEFAULT_CHECK_TIME.split(':')[1],10));
+  const detectedMin = extractTimeFromNote(rec.note);
   const duration = rec.duration_min !== null ? rec.duration_min : null;
-  const completedMin = duration !== null ? detectedMin + duration : null;
+
+  if(detectedMin !== null && duration !== null){
+    const completedMin = detectedMin + duration;
+    const usedDuration = completedMin - detectedMin; // computed from the two clock times
+    return `
+      <div class="timeline">
+        <div class="timeline-head">ไทม์ไลน์การดำเนินการแก้ไข (เวลาตามที่บันทึกในหมายเหตุ)</div>
+        <div class="timeline-row">
+          <div class="timeline-label">🔍 เวลาตรวจพบ</div>
+          <div class="timeline-value">${minutesToClock(detectedMin)}</div>
+        </div>
+        <div class="timeline-row">
+          <div class="timeline-label">✅ เวลาดำเนินการเสร็จ</div>
+          <div class="timeline-value">${minutesToClock(completedMin)}</div>
+        </div>
+        <div class="timeline-row">
+          <div class="timeline-label">⏱ ระยะเวลาแก้ไขที่ใช้</div>
+          <div class="timeline-value">${usedDuration} นาที</div>
+        </div>
+      </div>`;
+  }
 
   return `
     <div class="timeline">
-      <div class="timeline-head">ไทม์ไลน์การดำเนินการแก้ไข${isEstimate ? ' (เวลาตรวจพบประมาณจากรอบตรวจเช้า)' : ' (เวลาตามที่บันทึกในหมายเหตุ)'}</div>
+      <div class="timeline-head">ไทม์ไลน์การดำเนินการแก้ไข</div>
       <div class="timeline-row">
         <div class="timeline-label">🔍 เวลาตรวจพบ</div>
-        <div class="timeline-value ${isEstimate?'est':''}">${minutesToClock(detectedMin)}</div>
+        <div class="timeline-value est">ไม่ได้บันทึกเวลาที่ชัดเจนในหมายเหตุ</div>
       </div>
       <div class="timeline-row">
         <div class="timeline-label">✅ เวลาดำเนินการเสร็จ</div>
-        <div class="timeline-value ${isEstimate?'est':''}">${completedMin !== null ? minutesToClock(completedMin) : '—'}</div>
+        <div class="timeline-value est">ไม่ได้บันทึกเวลาที่ชัดเจนในหมายเหตุ</div>
       </div>
       <div class="timeline-row">
-        <div class="timeline-label">⏱ ระยะเวลาดำเนินการ</div>
+        <div class="timeline-label">⏱ ระยะเวลาแก้ไขที่ใช้</div>
         <div class="timeline-value">${duration !== null ? duration + ' นาที' : '—'}</div>
       </div>
     </div>`;
@@ -768,8 +815,11 @@ async function syncFromSheets(){
 
   try{
     const text = await fetchCsv(DEFAULT_DAILY_URL);
-    const records = rowsToDailyRecords(parseCsvText(text));
-    if(records.length){ DAILY = records; dailyOk = true; }
+    const { records, hints } = rowsToDailyRecords(parseCsvText(text));
+    if(records.length){
+      DAILY = records; dailyOk = true;
+      if(hints) Object.assign(FACET_HINTS, hints);
+    }
   } catch(err){ /* keep previous data on failure */ }
 
   try{
