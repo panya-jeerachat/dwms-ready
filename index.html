@@ -77,7 +77,8 @@
   section.streak{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px 16px;margin-bottom:22px;}
   .streak-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
   .streak-title{font-size:13px;font-weight:600;color:var(--text-primary);}
-  .streak-meta{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);}
+  .streak-meta{font-family:var(--font-mono);font-size:13.5px;font-weight:700;color:var(--ready);}
+  .streak-meta b{color:var(--ready);font-size:15px;}
   .streak-scroll{overflow-x:auto;padding-bottom:4px;}
   .streak-months{display:flex;gap:14px;min-width:max-content;}
   .streak-month{display:flex;flex-direction:column;gap:5px;}
@@ -147,6 +148,12 @@
   /* day detail card */
   .detail-date{font-family:var(--font-mono);font-size:12px;color:var(--text-tertiary);letter-spacing:.03em;}
   .detail-day{font-size:18px;font-weight:600;margin-top:2px;}
+  .facet-summary{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .fs-item{font-size:12px;font-weight:600;padding:4px 9px;border-radius:6px;background:var(--bg-surface-2);border:1px solid var(--border-soft);}
+  .fs-item b{font-family:var(--font-mono);}
+  .fs-item.fs-ready{color:var(--ready);}
+  .fs-item.fs-issue{color:var(--issue);}
+  .fs-item.fs-none{color:var(--text-tertiary);}
   .overall-row{display:flex;align-items:baseline;gap:8px;margin:14px 0 16px;}
   .overall-num{font-family:var(--font-mono);font-size:30px;font-weight:600;}
   .overall-num.ready{color:var(--ready);} .overall-num.issue{color:var(--issue);}
@@ -239,9 +246,9 @@
         <div class="month-summary" id="monthSummary"></div>
       </div>
       <div class="dow-row">
-        <div class="dow">จ</div><div class="dow">อ</div><div class="dow">พ</div>
-        <div class="dow">พฤ</div><div class="dow">ศ</div>
-        <div class="dow weekend">ส</div><div class="dow weekend">อา</div>
+        <div class="dow">จันทร์</div><div class="dow">อังคาร</div><div class="dow">พุธ</div>
+        <div class="dow">พฤหัสบดี</div><div class="dow">ศุกร์</div>
+        <div class="dow weekend">เสาร์</div><div class="dow weekend">อาทิตย์</div>
       </div>
       <div class="day-grid" id="dayGrid"></div>
     </section>
@@ -321,7 +328,7 @@ function findDetectedTimeColumnIndex(headerRow){
 const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const MONTHS_TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-const DOW_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const DOW_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
 const LS_LAST_SYNC = 'dwms_last_sync';
 
 /* =========================================================
@@ -653,20 +660,30 @@ function renderDetail(){
   if(!rec){
     panel.innerHTML = `
       <div class="card-title">รายละเอียดรายวัน</div>
-      <div class="detail-date">${d} ${MONTHS_TH[m-1]} ${beYear(y)} · วัน${dow}</div>
+      <div class="detail-date">${d} ${MONTHS_TH[m-1]} ${beYear(y)} · ${dow}</div>
       <div class="empty-detail">ไม่มีข้อมูลการตรวจสำหรับวันที่นี้</div>`;
     return;
   }
 
   const overallStatus = (rec.overall !== null && rec.overall < 100) ? 'issue' : 'ready';
+  let readyCount = 0, issueCount = 0, noneCount = 0;
   const facetsHtml = FACETS.map(f => {
     const st = facetStatus(rec[f.key]);
+    if(st === 'ready') readyCount++;
+    else if(st === 'issue') issueCount++;
+    else noneCount++;
     const label = st==='ready' ? 'พร้อม' : st==='issue' ? 'พบเหตุการณ์' : 'ไม่มีข้อมูล';
     return `<div class="facet-row">
       <div class="facet-name">${f.label}${FACET_HINTS[f.key] ? `<br><span style="font-size:11px;color:var(--text-tertiary)">${FACET_HINTS[f.key]}</span>` : ''}</div>
       <div class="facet-status ${st}"><span class="dot ${st}"></span>${label}</div>
     </div>`;
   }).join('');
+  const facetSummaryHtml = `
+    <div class="facet-summary">
+      <span class="fs-item fs-ready">🟢 พร้อม <b>${readyCount}</b> ด้าน</span>
+      <span class="fs-item fs-issue">🟡 พบปัญหา <b>${issueCount}</b> ด้าน</span>
+      ${noneCount > 0 ? `<span class="fs-item fs-none">⚪ ไม่มีข้อมูล <b>${noneCount}</b> ด้าน</span>` : ''}
+    </div>`;
 
   const noteHtml = (rec.note && rec.note !== '-') ? `<div class="note-box">📝 ${escapeHtml(rec.note)}</div>` : '';
   const timelineHtml = buildTimelineHtml(rec);
@@ -678,8 +695,9 @@ function renderDetail(){
 
   panel.innerHTML = `
     <div class="card-title">รายละเอียดรายวัน</div>
-    <div class="detail-date">${MONTHS_TH[m-1]} ${beYear(y)} · วัน${dow}</div>
+    <div class="detail-date">${MONTHS_TH[m-1]} ${beYear(y)} · ${dow}</div>
     <div class="detail-day">${d} ${MONTHS_TH_SHORT[m-1]}</div>
+    ${facetSummaryHtml}
     <div class="overall-row">
       <div class="overall-num ${overallStatus}">${rec.overall !== null ? Math.round(rec.overall*100)/100 : '—'}%</div>
       <div class="overall-label">ความพร้อมภาพรวม</div>
@@ -804,9 +822,9 @@ function renderStreak(){
   });
 
   const latest = DAILY[DAILY.length-1];
-  document.getElementById('streakMeta').textContent =
+  document.getElementById('streakMeta').innerHTML =
     latest && latest.continuous_days !== null
-      ? `ล่าสุดต่อเนื่อง ${latest.continuous_days} วันโดยไม่เกิดเหตุขัดข้องระหว่างเรียน`
+      ? `วันให้บริการต่อเนื่อง <b>${latest.continuous_days}</b> วันโดยไม่เกิดเหตุขัดข้องระหว่างเรียน`
       : '';
 }
 
