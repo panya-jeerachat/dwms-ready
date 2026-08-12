@@ -178,10 +178,30 @@
   .empty-detail{color:var(--text-tertiary);font-size:13.5px;padding:10px 2px;}
 
   footer{margin-top:26px;font-size:12px;color:var(--text-tertiary);text-align:center;}
+
+  /* ---------- Top suite nav bar ---------- */
+  nav.suite-nav{
+    display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 18px;margin-bottom:6px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .suite-nav a, .suite-nav span.active{
+    font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:20px;
+    border:1px solid var(--border);background:var(--bg-surface);color:var(--text-secondary);
+    text-decoration:none;white-space:nowrap;transition:background .15s,color .15s;
+  }
+  .suite-nav a:hover{background:var(--bg-surface-2);color:var(--text-primary);}
+  .suite-nav span.active{background:var(--ready-dim);border-color:#2c5643;color:var(--ready);font-weight:600;}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <nav class="suite-nav">
+    <a href="https://datastudio.google.com/reporting/68984584-16fa-45f3-ab66-9b88b8f92168/page/page_12345" target="_blank" rel="noopener">🏠 หน้าหลัก</a>
+    <a href="https://panya-jeerachat.github.io/dwms-calendar/">📅 ปฏิทินการสนับสนุนกิจกรรมโสตทัศนูปกรณ์</a>
+    <a href="https://panya-jeerachat.github.io/dwms-assistant/">🔎 ผู้ช่วยค้นข้อมูลภาระงานโสตทัศนูปกรณ์</a>
+    <span class="active">🏗️ ปฏิทินความพร้อมโครงสร้างพื้นฐาน</span>
+  </nav>
 
   <header class="top">
     <div class="eyebrow">DWMS · Digital Workload Management System</div>
