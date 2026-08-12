@@ -38,9 +38,10 @@
   .dot.ready{background:var(--ready);} .dot.issue{background:var(--issue);} .dot.none{background:var(--none);}
 
   /* ---------- KPI highlight row ---------- */
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
-  @media (max-width:900px){ .kpi-row{grid-template-columns:repeat(2,1fr);} }
-  @media (max-width:520px){ .kpi-row{grid-template-columns:1fr;} }
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px;}
+  @media (max-width:1100px){ .kpi-row{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:720px){ .kpi-row{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:480px){ .kpi-row{grid-template-columns:1fr;} }
   .kpi-card{
     background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px 18px;
@@ -52,6 +53,7 @@
   .kpi-card.time .kpi-value{color:var(--today);}
   .kpi-card.power .kpi-value{color:var(--bad);}
   .kpi-card.prevented .kpi-value{color:var(--issue);}
+  .kpi-card.avgfix .kpi-value{color:var(--today);}
 
   /* ---------- Connection status bar ---------- */
   .conn-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:22px;}
@@ -201,6 +203,10 @@
     <div class="kpi-card prevented">
       <div class="kpi-label">ป้องกันเหตุขัดข้องได้สำเร็จสะสม</div>
       <div class="kpi-value"><span id="kpiPrevented">—</span><span class="unit">ครั้ง</span></div>
+    </div>
+    <div class="kpi-card avgfix">
+      <div class="kpi-label">ค่าเฉลี่ยระยะเวลาแก้ไขที่ใช้</div>
+      <div class="kpi-value"><span id="kpiAvgFix">—</span><span class="unit">นาที/ครั้ง</span></div>
     </div>
   </div>
 
@@ -490,10 +496,15 @@ function renderKpiRow(){
   const timeTotal = 60 * totalDays;
   const powerOutages = DAILY.filter(r => r.power === 1).length;
   const preventedTotal = DAILY.filter(r => r.auto_calc === 1).length;
+  const issueDurations = DAILY.filter(r => dayStatus(r) === 'issue' && r.duration_min !== null).map(r => r.duration_min);
+  const avgFix = issueDurations.length
+    ? Math.round((issueDurations.reduce((a,b) => a+b, 0) / issueDurations.length) * 100) / 100
+    : null;
   document.getElementById('kpiPaper').textContent = paperTotal.toLocaleString('th-TH');
   document.getElementById('kpiTime').textContent = timeTotal.toLocaleString('th-TH');
   document.getElementById('kpiPower').textContent = powerOutages.toLocaleString('th-TH');
   document.getElementById('kpiPrevented').textContent = preventedTotal.toLocaleString('th-TH');
+  document.getElementById('kpiAvgFix').textContent = avgFix !== null ? avgFix.toLocaleString('th-TH') : '—';
 }
 
 /* =========================================================
