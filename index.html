@@ -92,8 +92,8 @@
   /* ---------- Layout: calendar + right column ---------- */
   .board{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
   @media (max-width:900px){ .board{grid-template-columns:1fr;} }
-  .right-col{display:flex;flex-direction:column;gap:20px;position:sticky;top:20px;}
-  @media (max-width:900px){ .right-col{position:static;} }
+  .right-col{display:flex;flex-direction:column;gap:20px;}
+  @media (min-width:901px){ .right-col{position:sticky;top:20px;} }
 
   section.cal{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 20px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
@@ -101,9 +101,8 @@
   .nav-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg-surface-2);color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;}
   .nav-btn:hover{background:var(--bg-surface-3);}
   .month-title{font-size:17px;font-weight:600;min-width:150px;text-align:center;}
-  .month-summary{display:flex;gap:14px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);}
+  .month-summary{display:flex;flex-wrap:wrap;gap:6px 12px;font-family:var(--font-mono);font-size:11.5px;color:var(--text-secondary);}
   .month-summary b{color:var(--text-primary);font-weight:600;}
-  @media (max-width:520px){ .month-summary{display:none;} }
   .dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
   .dow{text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-tertiary);letter-spacing:.04em;padding-bottom:4px;}
   .dow.weekend{color:#7a5a3a;}
@@ -120,29 +119,51 @@
   .day-cell.none .status-dot{background:var(--none);}
   .day-cell.today::after{content:'';position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--today);}
 
-  /* ---------- Right column cards ---------- */
+  /* ---------- Cards ---------- */
   .card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 20px;}
   .card-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;}
   .card-subtitle{font-size:11.5px;color:var(--text-tertiary);margin-bottom:14px;}
+  section.trend-h{margin-bottom:22px;}
 
-  /* trend card */
-  .trend-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
-  .trend-num{font-family:var(--font-mono);font-size:26px;font-weight:600;}
-  .trend-change{font-family:var(--font-mono);font-size:12.5px;font-weight:600;padding:2px 7px;border-radius:5px;}
+  /* narrative row — sits right under the calendar, full width */
+  .trend-narrative-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+  @media (max-width:900px){ .trend-narrative-row{grid-template-columns:1fr;} }
+  .trend-narrative-row:empty{display:none;margin-bottom:0;}
+  .trend-block{font-size:12.5px;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 15px;line-height:1.7;}
+  .trend-block-label{font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px;}
+  .trend-block.interp{border-left:3px solid var(--today);}
+  .trend-block.interp .trend-block-label{color:var(--today);}
+  .trend-block.action{border-left:3px solid var(--issue);}
+  .trend-block.action .trend-block-label{color:var(--issue);}
+  .trend-block.outcome{border-left:3px solid var(--ready);}
+  .trend-block.outcome .trend-block-label{color:var(--ready);}
+
+  /* trend card — horizontal chart + stats only (narrative lives elsewhere) */
+  .trend-h-top{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap;margin-bottom:18px;}
+  .trend-h-chart{flex:2 1 340px;min-width:260px;}
+  .trend-h-overall{flex:0 0 auto;text-align:right;}
+  @media (max-width:640px){ .trend-h-overall{text-align:left;} }
+  .trend-overall{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;justify-content:flex-end;}
+  @media (max-width:640px){ .trend-overall{justify-content:flex-start;} }
+  .trend-num{font-family:var(--font-mono);font-size:34px;font-weight:600;}
+  .trend-change{font-family:var(--font-mono);font-size:13px;font-weight:600;padding:3px 8px;border-radius:5px;}
   .trend-change.up{color:var(--ready);background:var(--ready-dim);}
   .trend-change.down{color:var(--bad);background:var(--bad-dim);}
   .trend-change.flat{color:var(--text-tertiary);background:var(--bg-surface-2);}
-  .trend-month-label{font-size:12px;color:var(--text-secondary);margin-bottom:12px;}
-  .sparkline{width:100%;display:block;margin-bottom:14px;}
+  .trend-month-label{font-size:12.5px;color:var(--text-secondary);}
+  .sparkline{width:100%;display:block;}
   .spark-bar{fill:var(--none);}
   .spark-bar.active{fill:var(--today);}
   .spark-bar.good{fill:var(--ready);}
-  .spark-axis{font-family:var(--font-mono);font-size:8px;fill:var(--text-tertiary);}
-  .trend-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-  .tstat{background:var(--bg-surface-2);border:1px solid var(--border-soft);border-radius:8px;padding:8px 10px;}
-  .tstat-label{font-size:10.5px;color:var(--text-tertiary);}
-  .tstat-value{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--text-primary);margin-top:2px;}
-  .trend-interp{font-size:12px;color:var(--text-secondary);background:var(--bg-surface-2);border-left:2px solid var(--today);border-radius:6px;padding:9px 11px;line-height:1.6;}
+  .spark-value{font-family:var(--font-mono);font-size:9px;fill:var(--text-secondary);text-anchor:middle;}
+  .spark-value.active{fill:var(--today);font-weight:600;}
+  .spark-axis{font-family:var(--font-mono);font-size:9px;fill:var(--text-tertiary);text-anchor:middle;}
+  .trend-stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+  @media (max-width:1100px){ .trend-stats-row{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:640px){ .trend-stats-row{grid-template-columns:repeat(2,1fr);} }
+  .tstat{background:var(--bg-surface-2);border:1px solid var(--border-soft);border-radius:8px;padding:12px 13px;}
+  .tstat-label{font-size:11.5px;color:var(--text-tertiary);line-height:1.4;}
+  .tstat-value{font-family:var(--font-mono);font-size:17px;font-weight:600;color:var(--text-primary);margin-top:4px;}
   .trend-empty{color:var(--text-tertiary);font-size:13px;padding:10px 0;}
 
   /* day detail card */
@@ -207,35 +228,7 @@
     <div class="eyebrow">DWMS · Digital Workload Management System</div>
     <h1>Infrastructure Readiness Calendar</h1>
     <div class="subtitle">รายงานสถานะความพร้อมโครงสร้างพื้นฐานและสิ่งสนับสนุนการเรียนการสอน · คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหาสารคาม</div>
-    <div class="legend">
-      <div class="legend-item"><span class="dot ready"></span>พร้อม</div>
-      <div class="legend-item"><span class="dot issue"></span>พบเหตุการณ์</div>
-      <div class="legend-item"><span class="dot none"></span>ไม่มีข้อมูล</div>
-    </div>
   </header>
-
-  <div class="kpi-row">
-    <div class="kpi-card paper">
-      <div class="kpi-label">ลดการใช้กระดาษสะสม</div>
-      <div class="kpi-value"><span id="kpiPaper">—</span><span class="unit">แผ่น</span></div>
-    </div>
-    <div class="kpi-card time">
-      <div class="kpi-label">เวลาตรวจเช็คลดลงสะสม</div>
-      <div class="kpi-value"><span id="kpiTime">—</span><span class="unit">นาที</span></div>
-    </div>
-    <div class="kpi-card power">
-      <div class="kpi-label">ระบบกระแสไฟฟ้าดับสะสม</div>
-      <div class="kpi-value"><span id="kpiPower">—</span><span class="unit">ครั้ง</span></div>
-    </div>
-    <div class="kpi-card prevented">
-      <div class="kpi-label">ป้องกันเหตุขัดข้องได้สำเร็จสะสม</div>
-      <div class="kpi-value"><span id="kpiPrevented">—</span><span class="unit">ครั้ง</span></div>
-    </div>
-    <div class="kpi-card avgfix">
-      <div class="kpi-label">ค่าเฉลี่ยระยะเวลาแก้ไขที่ใช้</div>
-      <div class="kpi-value"><span id="kpiAvgFix">—</span><span class="unit">นาที/ครั้ง</span></div>
-    </div>
-  </div>
 
   <div class="conn-bar">
     <div class="conn-left">
@@ -249,7 +242,7 @@
 
   <section class="streak">
     <div class="streak-head">
-      <div class="streak-title">ภาพรวมปีงบประมาณ 2569 · วันต่อเนื่องที่ไม่เกิดเหตุ</div>
+      <div class="streak-title">ภาพรวมการให้บริการและเหตุขัดข้อง</div>
       <div class="streak-meta" id="streakMeta"></div>
     </div>
     <div class="streak-scroll"><div class="streak-months" id="streakMonths"></div></div>
@@ -275,7 +268,33 @@
 
     <div class="right-col">
       <aside class="card" id="detailPanel"></aside>
-      <aside class="card" id="trendPanel"></aside>
+    </div>
+  </div>
+
+  <div class="trend-narrative-row" id="narrativePanel"></div>
+
+  <section class="card trend-h" id="trendPanel"></section>
+
+  <div class="kpi-row">
+    <div class="kpi-card paper">
+      <div class="kpi-label">ลดการใช้กระดาษสะสม</div>
+      <div class="kpi-value"><span id="kpiPaper">—</span><span class="unit">แผ่น</span></div>
+    </div>
+    <div class="kpi-card time">
+      <div class="kpi-label">เวลาตรวจเช็คลดลงสะสม</div>
+      <div class="kpi-value"><span id="kpiTime">—</span><span class="unit">นาที</span></div>
+    </div>
+    <div class="kpi-card power">
+      <div class="kpi-label">ระบบกระแสไฟฟ้าดับสะสม</div>
+      <div class="kpi-value"><span id="kpiPower">—</span><span class="unit">ครั้ง</span></div>
+    </div>
+    <div class="kpi-card prevented">
+      <div class="kpi-label">ป้องกันเหตุขัดข้องได้สำเร็จสะสม</div>
+      <div class="kpi-value"><span id="kpiPrevented">—</span><span class="unit">ครั้ง</span></div>
+    </div>
+    <div class="kpi-card avgfix">
+      <div class="kpi-label">ค่าเฉลี่ยระยะเวลาแก้ไขที่ใช้</div>
+      <div class="kpi-value"><span id="kpiAvgFix">—</span><span class="unit">นาที/ครั้ง</span></div>
     </div>
   </div>
 
@@ -484,13 +503,15 @@ indexData();
 
 const sortedDates = () => Object.keys(dailyByDate).sort();
 const sortedYms = () => Object.keys(monthlyByYm).sort();
-let lastD = sortedDates()[sortedDates().length-1].split('-').map(Number);
-let viewYear = lastD[0], viewMonth = lastD[1];
-let selectedKey = sortedDates()[sortedDates().length-1];
 
-const today = new Date();
 function toKey(y,m,d){ return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+// Always open to the visitor's real current date (their browser clock) so
+// the calendar is live/real-time on every visit, rather than defaulting to
+// whichever date happens to be last in the dataset.
+const today = new Date();
 const todayKey = toKey(today.getFullYear(), today.getMonth()+1, today.getDate());
+let viewYear = today.getFullYear(), viewMonth = today.getMonth()+1;
+let selectedKey = todayKey;
 
 /* =========================================================
    5) STATUS HELPERS
@@ -592,7 +613,7 @@ function renderCalendar(){
     grid.appendChild(cell);
   }
   document.getElementById('monthSummary').innerHTML =
-    `<span>🟢 <b>${counts.ready}</b></span><span>🟡 <b>${counts.issue}</b></span><span>⚪ <b>${counts.none}</b></span>`;
+    `<span>🟢 พร้อม <b>${counts.ready}</b></span><span>🟡 พบเหตุการณ์ <b>${counts.issue}</b></span><span>⚪ ไม่มีข้อมูล <b>${counts.none}</b></span>`;
 
   renderTrend();
 }
@@ -609,33 +630,40 @@ function avgDurationForMonth(ym){
 
 function renderTrend(){
   const panel = document.getElementById('trendPanel');
+  const narrativePanel = document.getElementById('narrativePanel');
   const yms = sortedYms();
   const currentYm = `${viewYear}-${String(viewMonth).padStart(2,'0')}`;
   const rec = monthlyByYm[currentYm];
 
-  const sparkW = 300, sparkH = 60, barGap = 4;
-  const barW = yms.length ? Math.max(6, (sparkW - barGap*(yms.length-1)) / yms.length) : 0;
+  const sparkW = 560, sparkH = 90, barGap = 8, bottomAxis = 16, topLabel = 14;
+  const plotH = sparkH - bottomAxis - topLabel;
+  const barW = yms.length ? Math.max(10, (sparkW - barGap*(yms.length-1)) / yms.length) : 0;
   let bars = '';
   yms.forEach((ym, i) => {
     const m = monthlyByYm[ym];
     const v = (m.overall === null || m.overall === undefined) ? 0 : m.overall;
-    const h = Math.max(2, (v/100) * (sparkH-12));
+    const h = Math.max(3, (v/100) * plotH);
     const x = i * (barW + barGap);
-    const y = sparkH - h;
-    const cls = ym === currentYm ? 'active' : (v >= 95 ? 'good' : '');
-    bars += `<rect class="spark-bar ${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2"></rect>`;
+    const y = topLabel + (plotH - h);
+    const isActive = ym === currentYm;
+    const cls = isActive ? 'active' : (v >= 95 ? 'good' : '');
+    const cx = x + barW/2;
+    bars += `<rect class="spark-bar ${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3"></rect>`;
+    bars += `<text class="spark-value ${isActive?'active':''}" x="${cx.toFixed(1)}" y="${(y-4).toFixed(1)}">${Math.round(v)}%</text>`;
+    bars += `<text class="spark-axis" x="${cx.toFixed(1)}" y="${sparkH-3}">${MONTHS_TH_SHORT[m.ym.split('-')[1]-1]}</text>`;
   });
   const sparkSvg = yms.length
-    ? `<svg class="sparkline" viewBox="0 0 ${sparkW} ${sparkH}" preserveAspectRatio="none" height="60">${bars}</svg>`
+    ? `<svg class="sparkline" viewBox="0 0 ${sparkW} ${sparkH}" preserveAspectRatio="none" height="${sparkH}">${bars}</svg>`
     : '';
 
   if(!rec){
     panel.innerHTML = `
       <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
       <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์</div>
-      ${sparkSvg}
+      <div class="trend-h-top"><div class="trend-h-chart">${sparkSvg}</div></div>
       <div class="trend-empty">ยังไม่มีข้อมูลสรุปสำหรับ ${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)}</div>
     `;
+    narrativePanel.innerHTML = '';
     return;
   }
 
@@ -648,14 +676,18 @@ function renderTrend(){
 
   panel.innerHTML = `
     <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
-    <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์</div>
-    ${sparkSvg}
-    <div class="trend-overall">
-      <div class="trend-num">${rec.overall !== null ? rec.overall : '—'}%</div>
-      <div class="trend-change ${changeCls}">${changeTxt}</div>
+    <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์ · ${rec.label}</div>
+    <div class="trend-h-top">
+      <div class="trend-h-chart">${sparkSvg}</div>
+      <div class="trend-h-overall">
+        <div class="trend-overall">
+          <div class="trend-num">${rec.overall !== null ? rec.overall : '—'}%</div>
+          <div class="trend-change ${changeCls}">${changeTxt}</div>
+        </div>
+        <div class="trend-month-label">ความพร้อมภาพรวม</div>
+      </div>
     </div>
-    <div class="trend-month-label">ความพร้อมภาพรวม · ${rec.label}</div>
-    <div class="trend-stats">
+    <div class="trend-stats-row">
       <div class="tstat"><div class="tstat-label">เฉลี่ยพบปัญหา/วัน</div><div class="tstat-value">${fmt(rec.avgIssues)} ด้าน</div></div>
       <div class="tstat"><div class="tstat-label">ค่าเฉลี่ยระยะเวลาดำเนินการ (นาที)</div><div class="tstat-value">${avgDurationDisplay} นาที</div></div>
       <div class="tstat"><div class="tstat-label">ป้องกันเหตุสำเร็จ</div><div class="tstat-value">${fmt(rec.prevented)} ครั้ง</div></div>
@@ -663,8 +695,22 @@ function renderTrend(){
       <div class="tstat"><div class="tstat-label">วันต่อเนื่องปกติ</div><div class="tstat-value">${fmt(rec.streakDays)} วัน</div></div>
       <div class="tstat"><div class="tstat-label">ลดกระดาษเดือนนี้</div><div class="tstat-value">${fmt(rec.paper)} แผ่น</div></div>
     </div>
-    ${rec.monthlyInterp ? `<div class="trend-interp">${escapeHtml(rec.interp ? rec.interp + ' — ' : '')}${escapeHtml(rec.monthlyInterp)}</div>` : ''}
   `;
+
+  // Narrative — placed right under the calendar (not buried below the
+  // trend chart) so it's visible as soon as an issue day is looked at,
+  // without scrolling further down the page.
+  const narrativeBlocks = [];
+  if(rec.monthlyInterp && rec.monthlyInterp !== 'ข้อมูลยังไม่ครบเดือน'){
+    narrativeBlocks.push(`<div class="trend-block interp"><div class="trend-block-label">สรุปสถานการณ์${rec.interp ? ' · ' + escapeHtml(rec.interp) : ''}</div>${escapeHtml(rec.monthlyInterp)}</div>`);
+  }
+  if(rec.action && rec.action !== 'ข้อมูลยังไม่ครบเดือน'){
+    narrativeBlocks.push(`<div class="trend-block action"><div class="trend-block-label">มาตรการที่ดำเนินการ</div>${escapeHtml(rec.action)}</div>`);
+  }
+  if(rec.outcome && rec.outcome !== 'ข้อมูลยังไม่ครบเดือน'){
+    narrativeBlocks.push(`<div class="trend-block outcome"><div class="trend-block-label">ผลลัพธ์การบริหารจัดการ</div>${escapeHtml(rec.outcome)}</div>`);
+  }
+  narrativePanel.innerHTML = narrativeBlocks.join('');
 }
 function fmt(v){ return (v === null || v === undefined) ? '—' : v; }
 
@@ -850,8 +896,10 @@ function renderStreak(){
 
 function renderAll(){
   indexData();
-  const dates = sortedDates();
-  if(!dates.includes(selectedKey)) selectedKey = dates[dates.length-1];
+  // Keep selectedKey as the visitor's real current date even if that date
+  // has no recorded row yet (renderDetail shows an empty state for it) —
+  // only fall back to the latest available data if nothing has ever been
+  // selected at all.
   renderKpiRow();
   renderConnBar();
   renderCalendar();
