@@ -345,11 +345,134 @@
   .trend-block.outcome{background:linear-gradient(90deg,var(--ready-dim),var(--bg-surface) 60%);}
   .trend-block-label{text-transform:none;letter-spacing:0;font-size:12px;}
   .trend-num{color:var(--today-ink);}
+  .trend-num.lvl-good{color:var(--ready-ink);} .trend-num.lvl-mid{color:var(--issue-ink);} .trend-num.lvl-low{color:var(--bad-ink);}
   .tstat{border-radius:10px;}
   .fs-item.fs-ready{background:var(--ready-dim);border-color:var(--ready-line);}
   .fs-item.fs-issue{background:var(--issue-dim);border-color:var(--issue-line);}
   .note-box{background:var(--issue-dim);border-left:3px solid var(--issue);color:var(--text-primary);}
   .footer-credit a{color:var(--today-ink);}
+
+
+  /* =========================================================
+     INTERACTION LAYER — tooltip, month chart, KPI pop-up
+     ========================================================= */
+  .tip{
+    position:fixed;z-index:60;left:0;top:0;max-width:300px;pointer-events:none;
+    background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border);
+    border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.55;
+    box-shadow:0 12px 30px -10px rgba(80,20,30,.35);
+    opacity:0;transform:translateY(4px);transition:opacity .12s ease,transform .12s ease;
+  }
+  :root[data-theme="dark"] .tip{box-shadow:0 14px 34px -10px rgba(0,0,0,.7);}
+  .tip.show{opacity:1;transform:none;}
+  .tip-title{font-weight:700;font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .tip-row{display:flex;justify-content:space-between;gap:14px;color:var(--text-secondary);}
+  .tip-row b{color:var(--text-primary);font-family:var(--font-mono);font-weight:600;}
+  .tip-note{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);color:var(--text-secondary);}
+  .tip-hint{margin-top:6px;font-size:11.5px;color:var(--today-ink);font-weight:600;}
+  .chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;}
+  .chip.ready{background:var(--ready-dim);color:var(--ready-ink);}
+  .chip.issue{background:var(--issue-dim);color:var(--issue-ink);}
+  .chip.none{background:var(--bg-surface-2);color:var(--text-tertiary);}
+  .chip.low{background:var(--bad-dim);color:var(--bad-ink);}
+
+  .day-cell:not(.blank):hover{transform:translateY(-2px);box-shadow:0 8px 16px -10px var(--today);}
+  .day-cell{transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
+  .streak-cell:not(.empty):hover{transform:scale(1.5);outline:1px solid var(--today);}
+  .streak-cell{transition:transform .12s ease;}
+
+  /* month bar chart */
+  .trend-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .trend-hint{font-size:12px;color:var(--text-tertiary);}
+  .mchart{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,1fr);gap:10px;align-items:end;overflow-x:auto;padding:6px 2px 2px;}
+  .mbar{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 4px 4px;border-radius:12px;border:1px solid transparent;transition:background-color .15s,border-color .15s;}
+  .mbar:hover{background:var(--bg-surface-2);}
+  .mbar:focus-visible{outline:2px solid var(--today);outline-offset:1px;}
+  .mbar-val{font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:var(--text-secondary);}
+  .mbar-track{position:relative;width:100%;max-width:46px;height:120px;border-radius:9px;background:
+      linear-gradient(to top, transparent calc(95% - 1px), color-mix(in srgb,var(--text-tertiary) 70%,transparent) calc(95% - 1px), color-mix(in srgb,var(--text-tertiary) 70%,transparent) 95%, transparent 95%),
+      var(--bg-surface-2);overflow:hidden;}
+  .mbar-fill{position:absolute;left:0;right:0;bottom:0;border-radius:9px 9px 0 0;transition:height .5s cubic-bezier(.2,.8,.2,1);}
+  .mbar-fill.good{background:linear-gradient(to top,var(--ready),color-mix(in srgb,var(--ready) 60%,#fff));}
+  .mbar-fill.mid{background:linear-gradient(to top,var(--issue),color-mix(in srgb,var(--issue) 60%,#fff));}
+  .mbar-fill.low{background:linear-gradient(to top,var(--bad),color-mix(in srgb,var(--bad) 55%,#fff));}
+  .mbar-fill.partial{opacity:.45;}
+  .mbar-lab{font-size:12px;color:var(--text-tertiary);white-space:nowrap;}
+  .mbar.active{background:var(--today-dim);border-color:var(--today);}
+  .mbar.active .mbar-val,.mbar.active .mbar-lab{color:var(--today-ink);font-weight:700;}
+  .mchart-legend{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0 16px;font-size:11.5px;color:var(--text-tertiary);}
+  .mchart-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .trend-note{font-size:12.5px;color:var(--issue-ink);background:var(--issue-dim);border-radius:10px;padding:8px 12px;margin-bottom:14px;}
+  .trend-sel{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border-soft);}
+  .trend-sel-name{font-size:18px;font-weight:700;}
+  .trend-sel-name small{font-size:12.5px;font-weight:500;color:var(--text-tertiary);margin-left:6px;}
+  .trend-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;}
+  @media (max-width:900px){ .trend-body{grid-template-columns:1fr;} }
+  .trend-stats-row{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:640px){ .trend-stats-row{grid-template-columns:repeat(2,1fr);} }
+  .delta{display:inline-block;margin-left:4px;font-size:11px;font-weight:600;font-family:var(--font-mono);}
+  .delta.better{color:var(--ready-ink);} .delta.worse{color:var(--bad-ink);} .delta.neutral,.delta.flat{color:var(--text-tertiary);}
+  .tstat-prev{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+  .fbars-title{font-size:12.5px;font-weight:600;margin-bottom:8px;}
+  .fbar{display:grid;grid-template-columns:130px 1fr 52px;align-items:center;gap:8px;font-size:12px;padding:3px 4px;border-radius:6px;}
+  .fbar:hover{background:var(--bg-surface-2);}
+  .fbar-name{color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fbar-track{height:8px;border-radius:99px;background:var(--bg-surface-2);overflow:hidden;}
+  .fbar-fill{display:block;height:100%;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1);}
+  .fbar-fill.good{background:var(--ready);} .fbar-fill.mid{background:var(--issue);} .fbar-fill.low{background:var(--bad);} .fbar-fill.nodata{background:var(--none);}
+  .fbar-val{text-align:right;font-family:var(--font-mono);font-weight:600;}
+  .insights{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;}
+  @media (max-width:900px){ .insights{grid-template-columns:1fr;} }
+  .insight{border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text-secondary);background:var(--bg-surface-2);line-height:1.6;}
+  .insight b{color:var(--text-primary);}
+  .insight .ic{font-size:15px;margin-right:4px;}
+
+  /* KPI cards become buttons */
+  .kpi-card{cursor:pointer;transition:transform .15s ease, box-shadow .2s ease;}
+  .kpi-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px -14px var(--kpi,var(--today));}
+  .kpi-card:focus-visible{outline:2px solid var(--kpi,var(--today));outline-offset:3px;}
+  .kpi-more{position:relative;z-index:1;margin-top:8px;font-size:11.5px;font-weight:600;color:var(--text-tertiary);}
+  .kpi-card:hover .kpi-more{color:var(--text-secondary);}
+
+  /* modal */
+  dialog.modal{border:none;padding:0;border-radius:20px;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 40px);
+    background:var(--bg-surface);color:var(--text-primary);box-shadow:0 30px 70px -20px rgba(60,10,20,.5);overflow:auto;}
+  dialog.modal::backdrop{background:rgba(40,10,16,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+  dialog.modal[open]{animation:modalIn .22s cubic-bezier(.2,.9,.3,1.2);}
+  @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.97);}to{opacity:1;transform:none;}}
+  .m-head{position:relative;padding:22px 24px 18px;color:#fff;background:linear-gradient(120deg,var(--mk),color-mix(in srgb,var(--mk) 55%,var(--hero-c)));}
+  .m-head h2{margin:0;font-size:19px;}
+  .m-head .m-total{font-family:var(--font-mono);font-size:36px;font-weight:600;margin-top:4px;line-height:1.1;}
+  .m-head .m-total small{font-size:14px;font-family:var(--font-th);font-weight:500;opacity:.9;margin-left:6px;}
+  .m-head p{margin:6px 0 0;font-size:13px;opacity:.92;max-width:52ch;}
+  .m-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.18);color:#fff;font-size:18px;cursor:pointer;line-height:1;}
+  .m-close:hover{background:rgba(255,255,255,.32);}
+  .m-body{padding:18px 24px 24px;display:flex;flex-direction:column;gap:16px;}
+  .m-sec-title{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .m-sec-sub{font-weight:500;color:var(--text-tertiary);font-size:12px;margin-left:6px;}
+  .kchart{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(40px,1fr);gap:8px;align-items:end;}
+  .kbar{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:4px 2px;border-radius:10px;}
+  .kbar:hover{background:var(--bg-surface-2);}
+  .kbar:focus-visible{outline:2px solid var(--today);}
+  .kbar-val{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-secondary);}
+  .kbar-track{width:100%;max-width:38px;height:100px;display:flex;align-items:flex-end;border-radius:8px;background:var(--bg-surface-2);overflow:hidden;}
+  .kbar-fill{width:100%;background:var(--mk);border-radius:8px 8px 0 0;transition:height .45s cubic-bezier(.2,.8,.2,1);}
+  .kbar-fill.peak{box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);}
+  .kbar-lab{font-size:11.5px;color:var(--text-tertiary);}
+  .m-insights{display:flex;flex-direction:column;gap:8px;}
+  .m-insight{padding:10px 12px;border-radius:10px;background:var(--bg-surface-2);font-size:13px;color:var(--text-secondary);border-left:3px solid var(--mk);}
+  .m-insight b{color:var(--text-primary);}
+  .m-events{display:flex;flex-direction:column;border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;}
+  .m-event{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border-soft);}
+  .m-event:last-child{border-bottom:none;}
+  .m-event:hover{background:var(--bg-surface-2);}
+  .m-event:focus-visible{outline:2px solid var(--today);outline-offset:-2px;}
+  .m-event-date{font-family:var(--font-mono);font-weight:600;}
+  .m-event-note{color:var(--text-secondary);}
+  .m-event-go{color:var(--today-ink);font-weight:600;font-size:12px;white-space:nowrap;}
+  @media (max-width:520px){ .m-event{grid-template-columns:80px 1fr;} .m-event-go{display:none;} .fbar{grid-template-columns:96px 1fr 46px;} }
+  .kmk-ready{--mk:var(--ready);} .kmk-info{--mk:var(--info);} .kmk-bad{--mk:var(--bad);} .kmk-issue{--mk:var(--issue);} .kmk-today{--mk:var(--today);}
+  @media (hover:none){ .tip{display:none;} }
 
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
@@ -426,25 +549,30 @@
   <section class="card trend-h" id="trendPanel"></section>
 
   <div class="kpi-row">
-    <div class="kpi-card paper">
+    <div class="kpi-card paper" data-kpi="paper" role="button" tabindex="0">
       <div class="kpi-label">ลดการใช้กระดาษสะสม</div>
       <div class="kpi-value"><span id="kpiPaper">—</span><span class="unit">แผ่น</span></div>
+      <div class="kpi-more">คลิกดูแนวโน้มรายเดือน</div>
     </div>
-    <div class="kpi-card time">
+    <div class="kpi-card time" data-kpi="time" role="button" tabindex="0">
       <div class="kpi-label">เวลาตรวจเช็คลดลงสะสม</div>
       <div class="kpi-value"><span id="kpiTime">—</span><span class="unit">นาที</span></div>
+      <div class="kpi-more">คลิกดูแนวโน้มรายเดือน</div>
     </div>
-    <div class="kpi-card power">
+    <div class="kpi-card power" data-kpi="power" role="button" tabindex="0">
       <div class="kpi-label">ระบบกระแสไฟฟ้าดับสะสม</div>
       <div class="kpi-value"><span id="kpiPower">—</span><span class="unit">ครั้ง</span></div>
+      <div class="kpi-more">คลิกดูแนวโน้มรายเดือน</div>
     </div>
-    <div class="kpi-card prevented">
+    <div class="kpi-card prevented" data-kpi="prevented" role="button" tabindex="0">
       <div class="kpi-label">ป้องกันเหตุขัดข้องได้สำเร็จสะสม</div>
       <div class="kpi-value"><span id="kpiPrevented">—</span><span class="unit">ครั้ง</span></div>
+      <div class="kpi-more">คลิกดูแนวโน้มรายเดือน</div>
     </div>
-    <div class="kpi-card avgfix">
+    <div class="kpi-card avgfix" data-kpi="avgfix" role="button" tabindex="0">
       <div class="kpi-label">ค่าเฉลี่ยระยะเวลาแก้ไขที่ใช้</div>
       <div class="kpi-value"><span id="kpiAvgFix">—</span><span class="unit">นาที/ครั้ง</span></div>
+      <div class="kpi-more">คลิกดูแนวโน้มรายเดือน</div>
     </div>
   </div>
 
@@ -453,6 +581,9 @@
     <div class="footer-credit">© 2569 คณะวิศวกรรมศาสตร์ มหาวิทยาลัยมหาสารคาม · พัฒนาโดย นายปัญญา จีระฉัตร | นักวิชาการโสตทัศนศึกษา | <a href="mailto:panya.j@msu.ac.th">panya.j@msu.ac.th</a></div>
   </footer>
 </div>
+
+<div class="tip" id="tip" role="tooltip"></div>
+<dialog class="modal" id="kpiModal" aria-labelledby="kpiModalTitle"><div id="kpiModalBody"></div></dialog>
 
 <script>
 /* =========================================================
@@ -762,7 +893,13 @@ function renderCalendar(){
     if(key === todayKey) cell.classList.add('today');
     if(key === selectedKey) cell.classList.add('selected');
     cell.innerHTML = `<div class="num">${d}</div><div class="status-dot"></div>`;
-    cell.addEventListener('click', () => { selectedKey = key; renderCalendar(); renderDetail(); renderStreak(); });
+    cell.setAttribute('data-tip', 'day:' + key);
+    cell.setAttribute('tabindex', '0');
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `${d} ${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)} · ${status==='ready'?'พร้อม':status==='issue'?'พบเหตุการณ์':'ไม่มีข้อมูล'}`);
+    const pick = () => { selectedKey = key; renderCalendar(); renderDetail(); renderStreak(); hideTip(); };
+    cell.addEventListener('click', pick);
+    cell.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); const n = document.querySelector('.day-cell.selected'); if(n) n.focus(); } });
     grid.appendChild(cell);
   }
   document.getElementById('monthSummary').innerHTML =
@@ -781,86 +918,148 @@ function avgDurationForMonth(ym){
   return Math.round(avg * 100) / 100;
 }
 
+let trendYm = null;
+const INCOMPLETE_TXT = 'ข้อมูลยังไม่ครบเดือน';
+function ymOf(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+function ymParts(ym){ return ym.split('-').map(Number); }
+function ymShort(ym){ const [y,m] = ymParts(ym); return MONTHS_TH_SHORT[m-1]; }
+function ymLong(ym){ const [y,m] = ymParts(ym); return `${MONTHS_TH[m-1]} ${beYear(y)}`; }
+function isNum(v){ return typeof v === 'number' && !Number.isNaN(v); }
+function r2(v){ return Math.round(v*100)/100; }
+function levelCls(v){ if(!isNum(v)) return 'nodata'; return v >= 95 ? 'good' : v >= 85 ? 'mid' : 'low'; }
+function isPartialMonth(rec){ return !!rec && (rec.interp === INCOMPLETE_TXT || rec.monthlyInterp === INCOMPLETE_TXT); }
+function prevYmOf(ym){ const yms = sortedYms(); const i = yms.indexOf(ym); return i > 0 ? yms[i-1] : null; }
+function monthAvgFix(ym){ const a = avgDurationForMonth(ym); if(a !== null) return a; const r = monthlyByYm[ym]; return r && isNum(r.avgFixMin) ? r.avgFixMin : null; }
+// lowerIsBetter: true / false / null (neutral — just show the direction)
+function deltaHtml(cur, prev, lowerIsBetter, unit){
+  if(!isNum(cur) || !isNum(prev)) return '';
+  const d = r2(cur - prev);
+  if(d === 0) return `<span class="delta flat">เท่าเดิม</span>`;
+  const cls = lowerIsBetter === null ? 'neutral' : ((lowerIsBetter ? d < 0 : d > 0) ? 'better' : 'worse');
+  return `<span class="delta ${cls}">${d > 0 ? '▲' : '▼'} ${Math.abs(d)}${unit || ''}</span>`;
+}
+function jumpToMonth(ym){
+  const [y,m] = ymParts(ym);
+  viewYear = y; viewMonth = m; trendYm = ym;
+  renderCalendar();
+}
+
 function renderTrend(){
   const panel = document.getElementById('trendPanel');
   const narrativePanel = document.getElementById('narrativePanel');
   const yms = sortedYms();
-  const currentYm = `${viewYear}-${String(viewMonth).padStart(2,'0')}`;
-  const rec = monthlyByYm[currentYm];
+  const viewYm = ymOf(viewYear, viewMonth);
+  const head = `<div class="trend-head"><div><div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
+    <div class="card-subtitle">ความพร้อมภาพรวมรายเดือน · คลิกแท่งกราฟเพื่อดูข้อมูลย้อนหลังของเดือนนั้น</div></div></div>`;
+  if(!yms.length){ panel.innerHTML = head + `<div class="trend-empty">ยังไม่มีข้อมูลสรุปรายเดือน</div>`; narrativePanel.innerHTML = ''; return; }
 
-  const sparkW = 560, sparkH = 90, barGap = 8, bottomAxis = 16, topLabel = 14;
-  const plotH = sparkH - bottomAxis - topLabel;
-  const barW = yms.length ? Math.max(10, (sparkW - barGap*(yms.length-1)) / yms.length) : 0;
-  let bars = '';
-  yms.forEach((ym, i) => {
+  // Follow the calendar when that month has a summary; otherwise keep the
+  // last month the viewer picked (or the latest), so the panel is never empty.
+  if(monthlyByYm[viewYm]) trendYm = viewYm;
+  else if(!trendYm || !monthlyByYm[trendYm]) trendYm = yms[yms.length-1];
+  const rec = monthlyByYm[trendYm];
+  const prevYm = prevYmOf(trendYm);
+  const prev = prevYm ? monthlyByYm[prevYm] : null;
+
+  const chart = yms.map(ym => {
     const m = monthlyByYm[ym];
-    const v = (m.overall === null || m.overall === undefined) ? 0 : m.overall;
-    const h = Math.max(3, (v/100) * plotH);
-    const x = i * (barW + barGap);
-    const y = topLabel + (plotH - h);
-    const isActive = ym === currentYm;
-    const cls = isActive ? 'active' : (v >= 95 ? 'good' : '');
-    const cx = x + barW/2;
-    bars += `<rect class="spark-bar ${cls}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3"></rect>`;
-    bars += `<text class="spark-value ${isActive?'active':''}" x="${cx.toFixed(1)}" y="${(y-4).toFixed(1)}">${Math.round(v)}%</text>`;
-    bars += `<text class="spark-axis" x="${cx.toFixed(1)}" y="${sparkH-3}">${MONTHS_TH_SHORT[m.ym.split('-')[1]-1]}</text>`;
-  });
-  const sparkSvg = yms.length
-    ? `<svg class="sparkline" viewBox="0 0 ${sparkW} ${sparkH}" preserveAspectRatio="none" height="${sparkH}">${bars}</svg>`
-    : '';
-
-  if(!rec){
-    panel.innerHTML = `
-      <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
-      <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์</div>
-      <div class="trend-h-top"><div class="trend-h-chart">${sparkSvg}</div></div>
-      <div class="trend-empty">ยังไม่มีข้อมูลสรุปสำหรับ ${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)}</div>
-    `;
-    narrativePanel.innerHTML = '';
-    return;
-  }
+    const v = isNum(m.overall) ? m.overall : 0;
+    const partial = isPartialMonth(m);
+    const active = ym === trendYm;
+    return `<button type="button" class="mbar${active ? ' active' : ''}" data-ym="${ym}" data-tip="month:${ym}" aria-pressed="${active}" aria-label="${ymLong(ym)} ความพร้อม ${isNum(m.overall) ? m.overall : '—'}%">
+      <span class="mbar-val">${isNum(m.overall) ? Math.round(v*10)/10 : '—'}%${partial ? '*' : ''}</span>
+      <span class="mbar-track"><span class="mbar-fill ${levelCls(m.overall)}${partial ? ' partial' : ''}" style="height:${Math.max(2, Math.min(100, v))}%"></span></span>
+      <span class="mbar-lab">${ymShort(ym)}</span>
+    </button>`;
+  }).join('');
+  const hasPartial = yms.some(ym => isPartialMonth(monthlyByYm[ym]));
+  const legend = `<div class="mchart-legend">
+      <span><i style="background:var(--ready)"></i>≥ 95%</span>
+      <span><i style="background:var(--issue)"></i>85–94.9%</span>
+      <span><i style="background:var(--bad)"></i>&lt; 85%</span>
+      <span><i style="background:var(--text-tertiary);height:2px;vertical-align:3px"></i>เส้นเป้าหมาย 95%</span>
+      ${hasPartial ? '<span>* ข้อมูลยังไม่ครบเดือน</span>' : ''}
+    </div>`;
+  const note = !monthlyByYm[viewYm]
+    ? `<div class="trend-note">${ymLong(viewYm)} ยังไม่มีสรุปรายเดือน · กำลังแสดงข้อมูลของ${ymLong(trendYm)}</div>` : '';
 
   const changeVal = rec.change;
-  const changeCls = (changeVal === null) ? 'flat' : changeVal > 0 ? 'up' : changeVal < 0 ? 'down' : 'flat';
-  const changeArrow = (changeVal === null) ? '' : changeVal > 0 ? '▲' : changeVal < 0 ? '▼' : '■';
-  const changeTxt = (changeVal === null) ? '—' : `${changeArrow} ${Math.abs(changeVal).toFixed(2)}%`;
-  const avgDuration = avgDurationForMonth(currentYm);
-  const avgDurationDisplay = avgDuration !== null ? avgDuration : fmt(rec.avgFixMin);
+  const changeCls = !isNum(changeVal) ? 'flat' : changeVal > 0 ? 'up' : changeVal < 0 ? 'down' : 'flat';
+  const changeTxt = !isNum(changeVal) ? '—' : `${changeVal > 0 ? '▲' : changeVal < 0 ? '▼' : '■'} ${Math.abs(changeVal).toFixed(2)}%`;
+  const avgFix = monthAvgFix(trendYm);
+  const prevFix = prevYm ? monthAvgFix(prevYm) : null;
+  const prevTxt = prev ? `เทียบ ${ymShort(prevYm)}` : 'เดือนแรกของข้อมูล';
 
-  panel.innerHTML = `
-    <div class="card-title">แนวโน้มตัวชี้วัดผลการดำเนินงานรายเดือน</div>
-    <div class="card-subtitle">ระบบติดตามความพร้อมโครงสร้างพื้นฐานแบบเรียลไทม์ · ${rec.label}</div>
-    <div class="trend-h-top">
-      <div class="trend-h-chart">${sparkSvg}</div>
-      <div class="trend-h-overall">
-        <div class="trend-overall">
-          <div class="trend-num">${rec.overall !== null ? rec.overall : '—'}%</div>
-          <div class="trend-change ${changeCls}">${changeTxt}</div>
-        </div>
-        <div class="trend-month-label">ความพร้อมภาพรวม</div>
+  const partialSel = isPartialMonth(rec);
+  // an unfinished month can't be judged better/worse yet — show direction only
+  const stat = (label, cur, prevV, unit, lower) => `<div class="tstat"><div class="tstat-label">${label}</div>
+      <div class="tstat-value">${fmt(cur)} ${unit}${deltaHtml(cur, prevV, partialSel ? null : lower)}</div>
+      <div class="tstat-prev">${prev ? `${prevTxt}: ${fmt(prevV)}` : prevTxt}</div></div>`;
+  const stats = `<div class="trend-stats-row">
+      ${stat('เฉลี่ยพบปัญหา/วัน', rec.avgIssues, prev && prev.avgIssues, 'ด้าน', true)}
+      ${stat('ค่าเฉลี่ยระยะเวลาดำเนินการ', avgFix, prevFix, 'นาที', true)}
+      ${stat('ป้องกันเหตุสำเร็จ', rec.prevented, prev && prev.prevented, 'ครั้ง', null)}
+      ${stat('ระบบไฟฟ้ามีปัญหา', rec.powerIssues, prev && prev.powerIssues, 'ครั้ง', true)}
+      ${stat('วันต่อเนื่องปกติ', rec.streakDays, prev && prev.streakDays, 'วัน', false)}
+      ${stat('ลดกระดาษเดือนนี้', rec.paper, prev && prev.paper, 'แผ่น', false)}
+    </div>`;
+
+  const facetBars = FACETS.map(f => {
+    const v = isNum(rec[f.key]) ? rec[f.key] : null;
+    return `<div class="fbar" data-tip="facet:${trendYm}:${f.key}"><span class="fbar-name">${f.label}</span>
+      <span class="fbar-track"><span class="fbar-fill ${levelCls(v)}" style="width:${v === null ? 0 : v}%"></span></span>
+      <span class="fbar-val">${v === null ? '—' : r2(v) + '%'}</span></div>`;
+  }).join('');
+
+  // Insights across all complete months
+  const complete = yms.filter(ym => !isPartialMonth(monthlyByYm[ym]) && isNum(monthlyByYm[ym].overall));
+  let insights = '';
+  if(complete.length){
+    const best = complete.reduce((a,b) => monthlyByYm[b].overall > monthlyByYm[a].overall ? b : a);
+    const worst = complete.reduce((a,b) => monthlyByYm[b].overall < monthlyByYm[a].overall ? b : a);
+    const facetVals = FACETS.map(f => ({f, v: rec[f.key]})).filter(x => isNum(x.v));
+    const minV = facetVals.length ? Math.min(...facetVals.map(x => x.v)) : null;
+    const weakList = facetVals.filter(x => x.v === minV);
+    const weakest = weakList.length ? weakList[0] : null;
+    const weakName = weakest ? (weakList.length > 1 ? `${weakest.f.label} และอีก ${weakList.length-1} ด้าน` : weakest.f.label) : '';
+    // longest run of consecutive month-over-month improvement ending at the latest complete month
+    let run = 0;
+    for(let i = complete.length-1; i > 0; i--){ if(monthlyByYm[complete[i]].overall > monthlyByYm[complete[i-1]].overall) run++; else break; }
+    const last = complete[complete.length-1];
+    const trendLine = run >= 2
+      ? `ความพร้อมเพิ่มขึ้นต่อเนื่อง <b>${run} เดือน</b> จาก ${monthlyByYm[complete[complete.length-1-run]].overall}% เป็น <b>${monthlyByYm[last].overall}%</b> (${ymShort(last)})`
+      : `เดือนที่มีข้อมูลครบล่าสุด ${ymLong(last)} ความพร้อม <b>${monthlyByYm[last].overall}%</b>`;
+    insights = `<div class="insights">
+      <div class="insight"><span class="ic">📈</span>${trendLine}</div>
+      <div class="insight"><span class="ic">🏆</span>สูงสุด <b>${ymLong(best)}</b> ${monthlyByYm[best].overall}% · ต่ำสุด <b>${ymLong(worst)}</b> ${monthlyByYm[worst].overall}%</div>
+      <div class="insight"><span class="ic">🔎</span>${weakest && weakest.v < 100 ? `ด้านที่ต้องเฝ้าระวังใน ${ymShort(trendYm)}: <b>${weakName}</b> (${r2(weakest.v)}%)` : `ทุกด้านใน ${ymShort(trendYm)} พร้อม 100%`}</div>
+    </div>`;
+  }
+
+  panel.innerHTML = `${head}
+    <div class="mchart" role="group" aria-label="เลือกเดือน">${chart}</div>
+    ${legend}${note}
+    <div class="trend-sel">
+      <div class="trend-sel-name">${ymLong(trendYm)}${isPartialMonth(rec) ? '<small>ข้อมูลยังไม่ครบเดือน</small>' : ''}</div>
+      <div class="trend-overall" style="margin:0">
+        <div class="trend-num lvl-${levelCls(rec.overall)}">${isNum(rec.overall) ? rec.overall : '—'}%</div>
+        <div class="trend-change ${changeCls}" title="เทียบกับเดือนก่อนหน้า">${changeTxt}</div>
       </div>
     </div>
-    <div class="trend-stats-row">
-      <div class="tstat"><div class="tstat-label">เฉลี่ยพบปัญหา/วัน</div><div class="tstat-value">${fmt(rec.avgIssues)} ด้าน</div></div>
-      <div class="tstat"><div class="tstat-label">ค่าเฉลี่ยระยะเวลาดำเนินการ (นาที)</div><div class="tstat-value">${avgDurationDisplay} นาที</div></div>
-      <div class="tstat"><div class="tstat-label">ป้องกันเหตุสำเร็จ</div><div class="tstat-value">${fmt(rec.prevented)} ครั้ง</div></div>
-      <div class="tstat"><div class="tstat-label">ระบบไฟฟ้ามีปัญหา</div><div class="tstat-value">${fmt(rec.powerIssues)} ครั้ง</div></div>
-      <div class="tstat"><div class="tstat-label">วันต่อเนื่องปกติ</div><div class="tstat-value">${fmt(rec.streakDays)} วัน</div></div>
-      <div class="tstat"><div class="tstat-label">ลดกระดาษเดือนนี้</div><div class="tstat-value">${fmt(rec.paper)} แผ่น</div></div>
+    <div class="trend-body">
+      ${stats}
+      <div><div class="fbars-title">ความพร้อมรายด้าน</div>${facetBars}</div>
     </div>
-  `;
+    ${insights}`;
 
-  // Narrative — placed right under the calendar (not buried below the
-  // trend chart) so it's visible as soon as an issue day is looked at,
-  // without scrolling further down the page.
   const narrativeBlocks = [];
-  if(rec.monthlyInterp && rec.monthlyInterp !== 'ข้อมูลยังไม่ครบเดือน'){
-    narrativeBlocks.push(`<div class="trend-block interp"><div class="trend-block-label">สรุปสถานการณ์${rec.interp ? ' · ' + escapeHtml(rec.interp) : ''}</div>${escapeHtml(rec.monthlyInterp)}</div>`);
+  if(rec.monthlyInterp && rec.monthlyInterp !== INCOMPLETE_TXT){
+    narrativeBlocks.push(`<div class="trend-block interp"><div class="trend-block-label">สรุปสถานการณ์ ${ymShort(trendYm)}${rec.interp ? ' · ' + escapeHtml(rec.interp) : ''}</div>${escapeHtml(rec.monthlyInterp)}</div>`);
   }
-  if(rec.action && rec.action !== 'ข้อมูลยังไม่ครบเดือน'){
+  if(rec.action && rec.action !== INCOMPLETE_TXT){
     narrativeBlocks.push(`<div class="trend-block action"><div class="trend-block-label">มาตรการที่ดำเนินการ</div>${escapeHtml(rec.action)}</div>`);
   }
-  if(rec.outcome && rec.outcome !== 'ข้อมูลยังไม่ครบเดือน'){
+  if(rec.outcome && rec.outcome !== INCOMPLETE_TXT){
     narrativeBlocks.push(`<div class="trend-block outcome"><div class="trend-block-label">ผลลัพธ์การบริหารจัดการ</div>${escapeHtml(rec.outcome)}</div>`);
   }
   narrativePanel.innerHTML = narrativeBlocks.join('');
@@ -1021,7 +1220,7 @@ function renderStreak(){
       const status = dayStatus(rec);
       const cls = status === 'none' ? '' : status;
       const sel = key === selectedKey ? ' selected' : '';
-      cellsHtml += `<div class="streak-cell ${cls}${sel}" data-key="${key}" title="${d} ${MONTHS_TH[m-1]} ${beYear(y)}"></div>`;
+      cellsHtml += `<div class="streak-cell ${cls}${sel}" data-key="${key}" data-tip="day:${key}"></div>`;
     }
     monthsHtml.push(`<div class="streak-month">
         <div class="streak-month-label">${MONTHS_TH_SHORT[m-1]} ${String(beYear(y)).slice(-2)}</div>
@@ -1130,6 +1329,231 @@ document.getElementById('nextBtn').addEventListener('click', () => {
   renderCalendar();
 });
 
+
+/* =========================================================
+   INTERACTIONS — hover tooltip + KPI pop-up
+   ========================================================= */
+const tipEl = document.getElementById('tip');
+let tipTarget = null;
+function statusWord(st){ return st === 'ready' ? 'พร้อม' : st === 'issue' ? 'พบเหตุการณ์' : 'ไม่มีข้อมูล'; }
+function tipDay(key){
+  const [y,m,d] = key.split('-').map(Number);
+  const rec = dailyByDate[key];
+  const st = dayStatus(rec);
+  const dow = DOW_TH[new Date(y,m-1,d).getDay()];
+  let h = `<div class="tip-title">${d} ${MONTHS_TH_SHORT[m-1]} ${beYear(y)} <span class="chip ${st}">${statusWord(st)}</span></div>
+           <div class="tip-row"><span>${dow}</span></div>`;
+  if(!rec) return h;
+  if(isNum(rec.overall)) h += `<div class="tip-row"><span>ความพร้อมภาพรวม</span><b>${r2(rec.overall)}%</b></div>`;
+  const bad = FACETS.filter(f => rec[f.key] === 1).map(f => f.label);
+  if(bad.length) h += `<div class="tip-row"><span>ด้านที่พบปัญหา</span><b>${bad.length}/${FACETS.length}</b></div>`;
+  if(st === 'issue' && isNum(rec.duration_min)) h += `<div class="tip-row"><span>ใช้เวลาแก้ไข</span><b>${rec.duration_min} นาที</b></div>`;
+  if(rec.detected_time) h += `<div class="tip-row"><span>ตรวจพบเวลา</span><b>${escapeHtml(rec.detected_time)}</b></div>`;
+  if(bad.length) h += `<div class="tip-note">${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` และอีก ${bad.length-5} ด้าน` : ''}</div>`;
+  if(rec.note && rec.note !== '-') h += `<div class="tip-note">📝 ${escapeHtml(rec.note)}</div>`;
+  return h + `<div class="tip-hint">คลิกเพื่อดูรายละเอียดเต็ม</div>`;
+}
+function tipMonth(ym){
+  const r = monthlyByYm[ym]; if(!r) return '';
+  const lvl = levelCls(r.overall);
+  const chipCls = lvl === 'good' ? 'ready' : lvl === 'mid' ? 'issue' : lvl === 'low' ? 'low' : 'none';
+  const days = DAILY.filter(d => d.date.startsWith(ym));
+  const issueDays = days.filter(d => dayStatus(d) === 'issue').length;
+  let h = `<div class="tip-title">${ymLong(ym)} <span class="chip ${chipCls}">${isNum(r.overall) ? r.overall + '%' : '—'}</span></div>`;
+  if(isNum(r.change)) h += `<div class="tip-row"><span>เทียบเดือนก่อน</span><b>${r.change > 0 ? '▲' : r.change < 0 ? '▼' : ''} ${Math.abs(r.change)}%</b></div>`;
+  h += `<div class="tip-row"><span>วันที่ตรวจ / พบปัญหา</span><b>${days.length} / ${issueDays}</b></div>`;
+  h += `<div class="tip-row"><span>ไฟฟ้ามีปัญหา</span><b>${fmt(r.powerIssues)} ครั้ง</b></div>`;
+  h += `<div class="tip-row"><span>ป้องกันเหตุสำเร็จ</span><b>${fmt(r.prevented)} ครั้ง</b></div>`;
+  if(r.interp) h += `<div class="tip-note">${escapeHtml(r.interp)}</div>`;
+  return h + (ym === trendYm ? '' : `<div class="tip-hint">คลิกเพื่อดูข้อมูลเดือนนี้</div>`);
+}
+function tipFacet(ym, key){
+  const f = FACETS.find(x => x.key === key); const r = monthlyByYm[ym]; if(!f || !r) return '';
+  const p = prevYmOf(ym); const pv = p ? monthlyByYm[p][key] : null;
+  const days = DAILY.filter(d => d.date.startsWith(ym) && d[key] === 1).length;
+  let h = `<div class="tip-title">${f.label}</div>`;
+  if(FACET_HINTS[key]) h += `<div class="tip-row"><span>${FACET_HINTS[key]}</span></div>`;
+  h += `<div class="tip-row"><span>${ymShort(ym)}</span><b>${isNum(r[key]) ? r2(r[key]) + '%' : '—'}</b></div>`;
+  if(p) h += `<div class="tip-row"><span>${ymShort(p)}</span><b>${isNum(pv) ? r2(pv) + '%' : '—'}</b></div>`;
+  h += `<div class="tip-row"><span>วันที่พบปัญหาในเดือน</span><b>${days} วัน</b></div>`;
+  return h;
+}
+function tipHtmlFor(spec){
+  const [type, a, b] = spec.split(':');
+  if(type === 'day') return tipDay(a);
+  if(type === 'month') return tipMonth(a);
+  if(type === 'facet') return tipFacet(a, b);
+  return '';
+}
+function placeTip(el){
+  const r = el.getBoundingClientRect();
+  const tw = tipEl.offsetWidth, th = tipEl.offsetHeight, pad = 10;
+  let left = r.left + r.width/2 - tw/2;
+  left = Math.max(pad, Math.min(left, window.innerWidth - tw - pad));
+  let top = r.top - th - 10;
+  if(top < pad) top = r.bottom + 10;
+  tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
+}
+function showTip(el){
+  const html = tipHtmlFor(el.getAttribute('data-tip'));
+  if(!html) return hideTip();
+  tipTarget = el; tipEl.innerHTML = html; placeTip(el); tipEl.classList.add('show');
+}
+function hideTip(){ tipTarget = null; tipEl.classList.remove('show'); }
+document.addEventListener('pointerover', e => {
+  if(e.pointerType && e.pointerType !== 'mouse') return;
+  const el = e.target.closest('[data-tip]');
+  if(el && el !== tipTarget) showTip(el); else if(!el && tipTarget) hideTip();
+});
+document.addEventListener('focusin', e => {
+  const el = e.target.closest && e.target.closest('[data-tip]');
+  if(el && el.matches(':focus-visible')) showTip(el); else hideTip();
+});
+document.addEventListener('focusout', hideTip);
+window.addEventListener('scroll', () => { if(tipTarget) hideTip(); }, {passive:true});
+
+// month bar clicks (panel is re-rendered, so delegate from the container)
+document.getElementById('trendPanel').addEventListener('click', e => {
+  const b = e.target.closest('.mbar'); if(!b) return;
+  jumpToMonth(b.getAttribute('data-ym'));
+  hideTip();
+  const again = document.querySelector(`.mbar[data-ym="${b.getAttribute('data-ym')}"]`); if(again) again.focus({preventScroll:true});
+});
+
+/* ---------- KPI pop-up ---------- */
+function monthAggs(){
+  const map = {};
+  DAILY.forEach(r => {
+    const ym = r.date.slice(0,7);
+    const a = map[ym] || (map[ym] = {ym, days:0, power:0, prevented:0, fixSum:0, fixN:0, issueDays:0});
+    a.days++;
+    if(r.power === 1) a.power++;
+    if(r.auto_calc === 1) a.prevented++;
+    if(dayStatus(r) === 'issue'){ a.issueDays++; if(isNum(r.duration_min)){ a.fixSum += r.duration_min; a.fixN++; } }
+  });
+  return Object.keys(map).sort().map(k => { const a = map[k]; a.paper = 4*a.days; a.time = 60*a.days; a.avgfix = a.fixN ? r2(a.fixSum/a.fixN) : null; return a; });
+}
+const KPI_DEFS = {
+  paper:     {title:'ลดการใช้กระดาษสะสม', unit:'แผ่น', mk:'ready', lower:false,
+              desc:'นับ 4 แผ่นต่อวันตรวจ จากการเปลี่ยนแบบฟอร์มตรวจกระดาษเป็นการบันทึกดิจิทัล'},
+  time:      {title:'เวลาตรวจเช็คลดลงสะสม', unit:'นาที', mk:'info', lower:false,
+              desc:'นับ 60 นาทีต่อวันตรวจ เทียบกับขั้นตอนตรวจและสรุปผลแบบเดิม'},
+  power:     {title:'ระบบกระแสไฟฟ้าดับสะสม', unit:'ครั้ง', mk:'bad', lower:true,
+              desc:'จำนวนวันที่บันทึกว่าระบบกระแสไฟฟ้าพบปัญหา ซึ่งมักกระทบหลายระบบพร้อมกัน'},
+  prevented: {title:'ป้องกันเหตุขัดข้องได้สำเร็จสะสม', unit:'ครั้ง', mk:'issue', lower:null,
+              desc:'จำนวนวันที่ตรวจพบเหตุช่วงเช้าและแก้ไขได้ก่อนกระทบการเรียนการสอน'},
+  avgfix:    {title:'ค่าเฉลี่ยระยะเวลาแก้ไขที่ใช้', unit:'นาที/ครั้ง', mk:'today', lower:true,
+              desc:'ค่าเฉลี่ยระยะเวลาดำเนินการแก้ไขของวันที่พบปัญหา ยิ่งต่ำยิ่งดี'},
+};
+const kpiValueIds = {paper:'kpiPaper', time:'kpiTime', power:'kpiPower', prevented:'kpiPrevented', avgfix:'kpiAvgFix'};
+const nf = v => isNum(v) ? v.toLocaleString('th-TH') : '—';
+function dateShort(key){ const [y,m,d] = key.split('-').map(Number); return `${d} ${MONTHS_TH_SHORT[m-1]} ${String(beYear(y)).slice(-2)}`; }
+
+function kpiInsights(kind, aggs){
+  const withVal = aggs.filter(a => isNum(a[kind]));
+  if(!withVal.length) return [];
+  const max = withVal.reduce((a,b) => b[kind] > a[kind] ? b : a);
+  const min = withVal.reduce((a,b) => b[kind] < a[kind] ? b : a);
+  const total = aggs.reduce((s,a) => s + (isNum(a[kind]) ? a[kind] : 0), 0);
+  const out = [];
+  if(kind === 'paper'){
+    out.push(`เทียบเท่ากระดาษประมาณ <b>${(total/500).toFixed(1)} รีม</b> (รีมละ 500 แผ่น)`);
+    out.push(`เฉลี่ย <b>${nf(Math.round(total/aggs.length))} แผ่น/เดือน</b> · เดือนที่ลดได้มากที่สุดคือ ${ymLong(max.ym)} (${nf(max.paper)} แผ่น)`);
+  } else if(kind === 'time'){
+    out.push(`รวม <b>${nf(Math.round(total/60))} ชั่วโมง</b> หรือประมาณ <b>${(total/60/8).toFixed(1)} วันทำงาน</b> (วันละ 8 ชั่วโมง)`);
+    out.push(`เฉลี่ยเดือนละ <b>${nf(Math.round(total/60/aggs.length))} ชั่วโมง</b> ที่นำไปใช้กับงานบำรุงรักษาเชิงป้องกันได้`);
+  } else if(kind === 'power'){
+    const zero = aggs.filter(a => a.power === 0).map(a => ymShort(a.ym));
+    out.push(`เดือนที่เกิดบ่อยที่สุดคือ <b>${ymLong(max.ym)}</b> ${max.power} ครั้ง`);
+    out.push(zero.length ? `ไม่พบไฟฟ้าดับเลยใน <b>${zero.join(', ')}</b>` : `พบไฟฟ้าดับทุกเดือน ควรประสานหน่วยงานสาธารณูปโภคเพื่อวางแผนรองรับ`);
+    const issueTotal = aggs.reduce((s,a) => s + a.issueDays, 0);
+    if(issueTotal) out.push(`คิดเป็น <b>${Math.round(total/issueTotal*100)}%</b> ของวันที่พบปัญหาทั้งหมด (${issueTotal} วัน) แสดงว่าไฟฟ้าเป็นต้นเหตุหลัก`);
+  } else if(kind === 'prevented'){
+    out.push(`เฉลี่ย <b>${(total/aggs.length).toFixed(1)} ครั้ง/เดือน</b> · สูงสุดใน ${ymLong(max.ym)} (${max.prevented} ครั้ง)`);
+    out.push(`ทุกครั้งคือเหตุที่ถูกแก้ก่อนเริ่มเรียน จึงไม่กระทบการเรียนการสอนตามแผน`);
+  } else if(kind === 'avgfix'){
+    out.push(`เร็วที่สุด <b>${ymLong(min.ym)}</b> ${min.avgfix} นาที · ช้าที่สุด <b>${ymLong(max.ym)}</b> ${max.avgfix} นาที`);
+    const first = withVal[0], last = withVal[withVal.length-1];
+    if(first !== last){
+      const d = r2(last.avgfix - first.avgfix);
+      out.push(d < 0 ? `ลดลง <b>${Math.abs(d)} นาที</b> จาก ${ymShort(first.ym)} ถึง ${ymShort(last.ym)} แสดงว่าการแก้ไขเร็วขึ้น`
+                     : d > 0 ? `เพิ่มขึ้น <b>${d} นาที</b> จาก ${ymShort(first.ym)} ถึง ${ymShort(last.ym)} ควรทบทวนขั้นตอนแก้ไข`
+                     : `คงที่ตั้งแต่ ${ymShort(first.ym)} ถึง ${ymShort(last.ym)}`);
+    }
+  }
+  return out;
+}
+function kpiEvents(kind){
+  let list = [];
+  if(kind === 'power') list = DAILY.filter(r => r.power === 1);
+  else if(kind === 'prevented') list = DAILY.filter(r => r.auto_calc === 1);
+  else if(kind === 'avgfix') list = DAILY.filter(r => dayStatus(r) === 'issue' && isNum(r.duration_min)).sort((a,b) => b.duration_min - a.duration_min).slice(0,5);
+  else return null;
+  if(kind !== 'avgfix') list = list.slice().reverse().slice(0,8);
+  return list;
+}
+function openKpi(kind){
+  const def = KPI_DEFS[kind]; if(!def) return;
+  const aggs = monthAggs();
+  const vals = aggs.map(a => a[kind]);
+  const max = Math.max(1, ...vals.filter(isNum));
+  const peak = Math.max(...vals.filter(isNum));
+  const bars = aggs.map(a => {
+    const v = a[kind];
+    return `<button type="button" class="kbar" data-ym="${a.ym}" aria-label="${ymLong(a.ym)} ${nf(v)} ${def.unit}">
+      <span class="kbar-val">${nf(v)}</span>
+      <span class="kbar-track"><span class="kbar-fill${v === peak ? ' peak' : ''}" style="height:${isNum(v) ? Math.max(3, v/max*100) : 0}%"></span></span>
+      <span class="kbar-lab">${ymShort(a.ym)}</span></button>`;
+  }).join('');
+  const insights = kpiInsights(kind, aggs).map(t => `<div class="m-insight">${t}</div>`).join('');
+  const events = kpiEvents(kind);
+  const evTitle = kind === 'avgfix' ? 'วันที่ใช้เวลาแก้ไขนานที่สุด' : kind === 'power' ? 'เหตุไฟฟ้าล่าสุด' : 'เหตุที่ป้องกันได้ล่าสุด';
+  const evHtml = events && events.length ? `<div><div class="m-sec-title">${evTitle}<span class="m-sec-sub">คลิกเพื่อเปิดวันนั้นในปฏิทิน</span></div>
+      <div class="m-events">${events.map(r => `<button type="button" class="m-event" data-key="${r.date}">
+        <span class="m-event-date">${dateShort(r.date)}</span>
+        <span class="m-event-note">${kind === 'avgfix' ? `<b>${r.duration_min} นาที</b> · ` : ''}${r.note && r.note !== '-' ? escapeHtml(r.note) : 'ไม่มีหมายเหตุ'}</span>
+        <span class="m-event-go">เปิดดู</span></button>`).join('')}</div></div>` : '';
+  const body = document.getElementById('kpiModalBody');
+  body.className = 'kmk-' + def.mk;
+  body.innerHTML = `
+    <div class="m-head">
+      <button type="button" class="m-close" data-close aria-label="ปิด">✕</button>
+      <h2 id="kpiModalTitle">${def.title}</h2>
+      <div class="m-total">${document.getElementById(kpiValueIds[kind]).textContent}<small>${def.unit}</small></div>
+      <p>${def.desc}</p>
+    </div>
+    <div class="m-body">
+      <div><div class="m-sec-title">แยกรายเดือน<span class="m-sec-sub">คลิกแท่งเพื่อเปิดเดือนนั้น</span></div><div class="kchart">${bars}</div></div>
+      ${insights ? `<div><div class="m-sec-title">ข้อสังเกตที่น่าสนใจ</div><div class="m-insights">${insights}</div></div>` : ''}
+      ${evHtml}
+    </div>`;
+  const dlg = document.getElementById('kpiModal');
+  if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+  hideTip();
+}
+function closeKpi(){ const dlg = document.getElementById('kpiModal'); if(dlg.open) dlg.close ? dlg.close() : dlg.removeAttribute('open'); }
+function scrollToCalendar(){
+  const cal = document.querySelector('section.cal');
+  if(cal) cal.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+}
+document.getElementById('kpiModal').addEventListener('click', e => {
+  const dlg = e.currentTarget;
+  if(e.target === dlg || e.target.closest('[data-close]')) return closeKpi();
+  const bar = e.target.closest('.kbar');
+  if(bar){ closeKpi(); jumpToMonth(bar.getAttribute('data-ym')); document.getElementById('trendPanel').scrollIntoView({behavior:'smooth', block:'start'}); return; }
+  const ev = e.target.closest('.m-event');
+  if(ev){
+    const key = ev.getAttribute('data-key'); const [y,m] = key.split('-').map(Number);
+    closeKpi(); viewYear = y; viewMonth = m; selectedKey = key;
+    renderCalendar(); renderDetail(); renderStreak(); scrollToCalendar();
+  }
+});
+document.querySelectorAll('.kpi-card[data-kpi]').forEach(card => {
+  const kind = card.getAttribute('data-kpi');
+  card.setAttribute('aria-label', `${KPI_DEFS[kind].title} · เปิดแนวโน้มรายเดือน`);
+  card.addEventListener('click', () => openKpi(kind));
+  card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openKpi(kind); } });
+});
 
 /* =========================================================
    THEME TOGGLE (light default, remembers choice)
