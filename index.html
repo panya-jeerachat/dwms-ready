@@ -536,14 +536,31 @@
   .tp-title{margin:0;font-size:18px;line-height:1.35;display:flex;gap:8px;align-items:flex-start;}
   .tp-desc{margin:0;font-size:13.5px;color:var(--text-secondary);line-height:1.65;}
   .tp-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .tp-m{background:var(--bg-surface-2);border-radius:12px;padding:10px;min-width:0;}
-  .tp-m-val{font-family:var(--font-mono);font-weight:600;font-size:17px;color:var(--c-ink,var(--text-primary));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tp-m{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;background:var(--bg-surface-2);border-radius:12px;padding:10px;min-width:0;border:1px solid transparent;transition:border-color .15s,transform .15s;}
+  .tp-m:hover{border-color:var(--c);transform:translateY(-2px);}
+  .tp-m:focus-visible{outline:2px solid var(--c);outline-offset:1px;}
+  .tp-m.long{grid-column:1 / -1;}
+  .tp-m-more{margin-top:auto;padding-top:6px;font-size:11px;font-weight:600;color:var(--c-ink,var(--text-secondary));opacity:.8;}
+  .tp-m:hover .tp-m-more{opacity:1;}
+  .tp-m-val{font-family:var(--font-mono);font-weight:600;font-size:17px;color:var(--c-ink,var(--text-primary));overflow-wrap:anywhere;line-height:1.3;}
+  .tp-m.long .tp-m-val{font-family:var(--font-th);font-size:13px;font-weight:600;line-height:1.55;color:var(--text-primary);}
+  .tp-m.mid .tp-m-val{font-size:14px;}
   .tp-m-lab{font-size:11.5px;color:var(--text-tertiary);margin-top:2px;line-height:1.35;}
   .tp-flow{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-tertiary);border-top:1px dashed var(--border);padding-top:10px;margin-top:auto;}
   .tp-flow button{all:unset;cursor:pointer;color:var(--text-secondary);font-weight:600;}
   .tp-flow button:hover,.tp-flow button:focus-visible{color:var(--today-ink);text-decoration:underline;}
   .tp-example{font-size:12.5px;line-height:1.6;color:var(--text-secondary);background:color-mix(in srgb,var(--c) 9%,var(--bg-surface));border-left:3px solid var(--c);border-radius:10px;padding:9px 12px;}
   .tp-example span{display:block;font-size:11px;font-weight:700;color:var(--c-ink);margin-bottom:2px;}
+  .m-text{font-size:13.5px;line-height:1.75;color:var(--text-primary);white-space:pre-line;}
+  .m-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;}
+  .m-kv dt{color:var(--text-tertiary);} .m-kv dd{margin:0;font-weight:600;}
+  .m-blocks{display:flex;flex-direction:column;gap:10px;}
+  .m-block{border-radius:12px;padding:12px 14px;background:var(--bg-surface-2);border-left:3px solid var(--mk);}
+  .m-block h4{margin:0 0 4px;font-size:12.5px;color:var(--text-secondary);}
+  .m-block p{margin:0;font-size:13.5px;line-height:1.75;}
+  .m-facets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;}
+  .m-facet{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:8px 10px;border-radius:9px;background:var(--bg-surface-2);}
+  .m-facet small{display:block;color:var(--text-tertiary);font-size:11px;}
   .tp-action{align-self:flex-start;border:none;cursor:pointer;border-radius:999px;padding:8px 14px;font-weight:600;font-size:12.5px;color:#fff;background:var(--c);font-family:inherit;}
   .tp-action:hover{filter:brightness(1.08);}
   @media (max-width:480px){ .tp-metrics{grid-template-columns:1fr 1fr;} }
@@ -1461,7 +1478,7 @@ function tipDay(key){
   if(bad.length) h += `<div class="tip-row"><span>ด้านที่พบปัญหา</span><b>${bad.length}/${FACETS.length}</b></div>`;
   if(st === 'issue' && isNum(rec.duration_min)) h += `<div class="tip-row"><span>ใช้เวลาแก้ไข</span><b>${rec.duration_min} นาที</b></div>`;
   if(rec.detected_time) h += `<div class="tip-row"><span>ตรวจพบเวลา</span><b>${escapeHtml(rec.detected_time)}</b></div>`;
-  if(bad.length) h += `<div class="tip-note">${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` และอีก ${bad.length-5} ด้าน` : ''}</div>`;
+  if(bad.length) h += `<div class="tip-note">${bad.join(', ')}</div>`;
   if(rec.note && rec.note !== '-') h += `<div class="tip-note">📝 ${escapeHtml(rec.note)}</div>`;
   return h + `<div class="tip-hint">คลิกเพื่อดูรายละเอียดเต็ม</div>`;
 }
@@ -1627,7 +1644,7 @@ function openKpi(kind){
         <span class="m-event-note">${kind === 'avgfix' ? `<b>${r.duration_min} นาที</b> · ` : ''}${r.note && r.note !== '-' ? escapeHtml(r.note) : 'ไม่มีหมายเหตุ'}</span>
         <span class="m-event-go">เปิดดู</span></button>`).join('')}</div></div>` : '';
   const body = document.getElementById('kpiModalBody');
-  body.className = 'kmk-' + def.mk;
+  body.className = 'kmk-' + def.mk; body.style.removeProperty('--mk');
   body.innerHTML = `
     <div class="m-head">
       <button type="button" class="m-close" data-close aria-label="ปิด">✕</button>
@@ -1652,7 +1669,7 @@ function scrollToCalendar(){
 document.getElementById('kpiModal').addEventListener('click', e => {
   const dlg = e.currentTarget;
   if(e.target === dlg || e.target.closest('[data-close]')) return closeKpi();
-  const bar = e.target.closest('.kbar');
+  const bar = e.target.closest('.kbar, .kbar-like');
   if(bar){ closeKpi(); jumpToMonth(bar.getAttribute('data-ym')); document.getElementById('trendPanel').scrollIntoView({behavior:'smooth', block:'start'}); return; }
   const ev = e.target.closest('.m-event');
   if(ev){
@@ -1738,7 +1755,7 @@ function twMetrics(i, t){
     case 0: return [[t.days + ' วัน','ตรวจแล้วทั้งหมด'],[t.points ? nf(t.points) : '9 ด้าน', t.points ? 'ห้อง/จุดที่ตรวจต่อรอบ' : 'ระบบที่ตรวจ'],[L ? dateShort(L.date) : '—','ตรวจล่าสุด']];
     case 1: return [[nf(t.days),'ชุดข้อมูลดิจิทัล'],[nf(4*t.days),'แผ่นกระดาษที่ลดได้'],[dataSource === 'live' ? 'Sheet สด' : 'Snapshot','แหล่งข้อมูลปัจจุบัน']];
     case 2: return [[t.lastM && isNum(t.lastM.overall) ? t.lastM.overall + '%' : '—', 'ความพร้อม ' + (t.lastYm ? ymShort(t.lastYm) : '')],[nf(t.ready),'วันพร้อมครบทุกด้าน'],[nf(t.issueDays),'วันที่พบปัญหา']];
-    case 3: return [[t.avgFix !== null ? String(t.avgFix) : '—','นาที · เวลาแก้ไขเฉลี่ย'],[nf(t.before830),'ครั้งที่แก้ทันก่อน 08:30'],[nf(t.prevented),'ครั้งที่ป้องกันเหตุได้']];
+    case 3: return [[t.avgFix !== null ? String(t.avgFix) : '—','เวลาแก้ไขเฉลี่ย (นาที)'],[nf(t.before830),'ครั้งที่แก้ทันก่อน 08:30'],[nf(t.prevented),'ครั้งที่ป้องกันเหตุได้']];
     case 4: return [[L && isNum(L.continuous_days) ? nf(L.continuous_days) : '—','วันให้บริการต่อเนื่อง'],[t.onPlan !== null ? t.onPlan + '%' : '—','วันที่สอนได้ตามแผน'],[nf(t.classInc),'เหตุขัดข้องระหว่างเรียน']];
     case 5: return [[nf(t.complete),'เดือนที่สรุปครบแล้ว'],[t.lastM && isNum(t.lastM.change) ? (t.lastM.change > 0 ? '▲ ' : t.lastM.change < 0 ? '▼ ' : '') + Math.abs(t.lastM.change) + '%' : '—','เปลี่ยนแปลงเดือนล่าสุด'],[t.lastM && t.lastM.interp ? t.lastM.interp : '—','ข้อสรุปล่าสุด']];
   }
@@ -1930,7 +1947,7 @@ function twGo(go){
 }
 function twExample(i, t){
   const L = t.latest; let txt = '';
-  const clip = (x, n) => { x = String(x || ''); return x.length > n ? x.slice(0, n).trim() + '…' : x; };
+  const clip = (x) => String(x || '');
   if(i === 0 && L){
     const ok = FACETS.filter(f => L[f.key] === 0).length;
     txt = `รอบตรวจล่าสุด ${dateShort(L.date)} พร้อม ${ok}/${FACETS.length} ด้าน${L.note && L.note !== '-' ? ' · ' + clip(L.note, 60) : ''}`;
@@ -1959,7 +1976,11 @@ function twRenderPanel(){
     <div class="tp-top"><span class="tp-num">ขั้นตอนที่ ${i+1} / ${TWIN_STEPS.length}</span><span class="tp-when">🕒 ${st.when}</span></div>
     <h3 class="tp-title"><span aria-hidden="true">${st.icon}</span><span>${st.title}</span></h3>
     <p class="tp-desc">${st.desc}</p>
-    <div class="tp-metrics">${twMetrics(i, t).map(m => `<div class="tp-m" title="${escapeHtml(m[0])}"><div class="tp-m-val">${escapeHtml(m[0])}</div><div class="tp-m-lab">${m[1]}</div></div>`).join('')}</div>
+    <div class="tp-metrics">${twMetrics(i, t).map((m,k) => {
+      const v = String(m[0]); const size = v.length > 16 ? ' long' : v.length > 10 ? ' mid' : '';
+      return `<button type="button" class="tp-m${size}" data-metric="${k}" aria-label="${escapeHtml(m[1])}: ${escapeHtml(v)} · ดูข้อมูลเพิ่มเติม">
+        <span class="tp-m-val">${escapeHtml(v)}</span><span class="tp-m-lab">${m[1]}</span><span class="tp-m-more">ดูข้อมูลเพิ่มเติม ›</span></button>`;
+    }).join('')}</div>
     ${twExample(i, t)}
     <button class="tp-action" type="button" data-go="${st.action.go}">${st.action.label} →</button>
     <div class="tp-flow"><button type="button" data-step="${(i+5)%6}">← ${prev.short}</button><span>${i === 5 ? 'วนกลับสู่การตรวจรอบใหม่' : 'เส้นทางการกำกับติดตาม'}</span><button type="button" data-step="${(i+1)%6}">${next.short} →</button></div>`;
@@ -1970,12 +1991,133 @@ function twRenderSteps(){
   wrap.innerHTML = TWIN_STEPS.map((st,i) => `<button type="button" class="tw-step${i === TW.active ? ' active' : ''}${i < TW.active ? ' done' : ''}" data-step="${i}" style="--c:var(${st.c})" aria-pressed="${i === TW.active}">
       <span class="n">${i+1}</span><span>${st.short}</span><span class="bar"></span></button>`).join('');
 }
+
+/* ---------- Digital Twin: per-metric detail pop-up ---------- */
+function twBarsHtml(rows, unit){
+  const vals = rows.map(r => r.v).filter(isNum);
+  if(!vals.length) return '';
+  const max = Math.max(1, ...vals), peak = Math.max(...vals);
+  return `<div><div class="m-sec-title">แยกรายเดือน<span class="m-sec-sub">คลิกแท่งเพื่อเปิดเดือนนั้น</span></div><div class="kchart">${rows.map(r => `
+    <button type="button" class="kbar" data-ym="${r.ym}" aria-label="${ymLong(r.ym)} ${nf(r.v)} ${unit}">
+      <span class="kbar-val">${isNum(r.v) ? nf(r.v) : '—'}</span>
+      <span class="kbar-track"><span class="kbar-fill${r.v === peak ? ' peak' : ''}" style="height:${isNum(r.v) ? Math.max(3, r.v/max*100) : 0}%"></span></span>
+      <span class="kbar-lab">${ymShort(r.ym)}</span></button>`).join('')}</div></div>`;
+}
+function twEventsHtml(list, title, fmtRow){
+  if(!list.length) return `<div class="m-insight">ไม่พบรายการในช่วงข้อมูลนี้</div>`;
+  return `<div><div class="m-sec-title">${title}<span class="m-sec-sub">คลิกเพื่อเปิดวันนั้นในปฏิทิน</span></div><div class="m-events">${list.map(r => `
+    <button type="button" class="m-event" data-key="${r.date}"><span class="m-event-date">${dateShort(r.date)}</span>
+    <span class="m-event-note">${fmtRow(r)}</span><span class="m-event-go">เปิดดู</span></button>`).join('')}</div></div>`;
+}
+function twNote(r){ return r.note && r.note !== '-' ? escapeHtml(r.note) : 'ไม่มีหมายเหตุ'; }
+function twMonthBlocks(ym){
+  const r = monthlyByYm[ym]; if(!r) return '';
+  const blocks = [
+    ['ข้อสรุปสถานการณ์', r.interp], ['สรุปสถานการณ์ประจำเดือน', r.monthlyInterp],
+    ['มาตรการที่ดำเนินการ', r.action], ['ผลลัพธ์การบริหารจัดการ', r.outcome],
+  ].filter(b => b[1]);
+  if(!blocks.length) return '';
+  return `<div><div class="m-sec-title">รายงานฉบับเต็ม ${ymLong(ym)}</div><div class="m-blocks">${blocks.map(b =>
+    `<div class="m-block"><h4>${b[0]}</h4><p>${escapeHtml(b[1])}</p></div>`).join('')}</div></div>`;
+}
+function twMetricDetail(i, k, t){
+  const aggs = monthAggs();
+  const per = fn => aggs.map(a => ({ym:a.ym, v: fn(a.ym, a)}));
+  const daysIn = ym => DAILY.filter(d => d.date.startsWith(ym));
+  const L = t.latest;
+  const key = i + '-' + k;
+  switch(key){
+    case '0-0': return {desc:'จำนวนวันที่มีการบันทึกผลตรวจสำรวจความพร้อมทั้งหมดในระบบ นับตั้งแต่วันแรกของข้อมูล',
+      body: twBarsHtml(per((ym,a) => a.days), 'วัน')};
+    case '0-1': return {desc:'จำนวนห้องและจุดที่ตรวจในแต่ละรอบ อ่านค่าจากหัวคอลัมน์ของ Google Sheet จึงปรับตามจริงเมื่อมีการเพิ่มห้องหรือจุดติดตั้ง',
+      body: `<div><div class="m-sec-title">ขอบเขตการตรวจทั้ง 9 ด้าน</div><div class="m-facets">${FACETS.map(f =>
+        `<div class="m-facet"><span>${f.label}<small>${FACET_HINTS[f.key] || 'ตรวจสถานะการทำงานของระบบ'}</small></span></div>`).join('')}</div></div>`};
+    case '0-2': {
+      if(!L) return {desc:'ยังไม่มีข้อมูล', body:''};
+      return {desc:`ผลการตรวจรอบล่าสุดวันที่ ${dateShort(L.date)} แยกตามด้าน`,
+        body: `<div class="m-facets">${FACETS.map(f => { const st = facetStatus(L[f.key]);
+          return `<div class="m-facet"><span>${f.label}</span><span class="chip ${st}">${statusWord(st)}</span></div>`; }).join('')}</div>
+          ${L.note && L.note !== '-' ? `<div class="m-block"><h4>หมายเหตุ</h4><p>${escapeHtml(L.note)}</p></div>` : ''}
+          <button type="button" class="m-event" data-key="${L.date}"><span class="m-event-date">${dateShort(L.date)}</span><span class="m-event-note">เปิดรายละเอียดวันนี้ในปฏิทิน</span><span class="m-event-go">เปิดดู</span></button>`};
+    }
+    case '1-0': return {desc:'จำนวนชุดข้อมูลการตรวจที่บันทึกเป็นดิจิทัล (1 ชุดต่อ 1 วันตรวจ) ครอบคลุมสถานะ 9 ด้าน เวลาตรวจพบ ระยะเวลาแก้ไข และหมายเหตุ',
+      body: twBarsHtml(per((ym,a) => a.days), 'ชุด')};
+    case '1-1': return {desc:`คำนวณ 4 แผ่นต่อวันตรวจ รวม ${nf(4*t.days)} แผ่น เทียบเท่าประมาณ ${(4*t.days/500).toFixed(1)} รีม`,
+      body: twBarsHtml(per((ym,a) => a.paper), 'แผ่น')};
+    case '1-2': return {desc: dataSource === 'live'
+        ? 'หน้านี้เชื่อมต่อ Google Sheet สดแล้ว ข้อมูลรายวันและรายเดือนมาจากแหล่งเดียวกับที่ทีมบันทึก'
+        : 'ขณะนี้แสดงข้อมูลชุดสำรอง (snapshot) ที่บันทึกไว้ในไฟล์ เพราะยังเชื่อมต่อ Google Sheet สดไม่ได้ กดปุ่มซิงก์เพื่อดึงข้อมูลล่าสุด',
+      body: `<dl class="m-kv"><dt>สถานะ</dt><dd>${dataSource === 'live' ? 'เชื่อมต่อสด' : dataSource === 'partial' ? 'เชื่อมต่อบางส่วน' : 'Snapshot ในไฟล์'}</dd>
+        <dt>ข้อมูล ณ</dt><dd>${lastSyncAt ? formatDateTime(lastSyncAt) : SNAPSHOT_DATE}</dd>
+        <dt>ข้อมูลรายวัน</dt><dd>${nf(DAILY.length)} วัน</dd><dt>สรุปรายเดือน</dt><dd>${nf(MONTHLY.length)} เดือน</dd></dl>`};
+    case '2-0': return {desc:`ความพร้อมภาพรวมของ${t.lastYm ? ymLong(t.lastYm) : 'เดือนล่าสุด'} (เดือนล่าสุดที่ข้อมูลครบ) คำนวณจากสัดส่วนด้านที่พร้อมใช้งาน`,
+      body: twBarsHtml(sortedYms().map(ym => ({ym, v: monthlyByYm[ym].overall})), '%') + (t.lastYm ? twMonthBlocks(t.lastYm) : '')};
+    case '2-1': return {desc:'จำนวนวันที่ทั้ง 9 ด้านอยู่ในสถานะพร้อมใช้งาน ไม่พบปัญหาแม้แต่ด้านเดียว',
+      body: twBarsHtml(per(ym => daysIn(ym).filter(d => dayStatus(d) === 'ready').length), 'วัน')};
+    case '2-2': return {desc:'จำนวนวันที่พบปัญหาอย่างน้อย 1 ด้าน',
+      body: twBarsHtml(per((ym,a) => a.issueDays), 'วัน') +
+        twEventsHtml(DAILY.filter(d => dayStatus(d) === 'issue').slice().reverse(), 'ทุกวันที่พบปัญหา (ล่าสุดก่อน)',
+          r => `${FACETS.filter(f => r[f.key] === 1).length} ด้าน · ${twNote(r)}`)};
+    case '3-0': return {desc:'ค่าเฉลี่ยระยะเวลาดำเนินการแก้ไข (นาที) ของวันที่พบปัญหา ยิ่งต่ำยิ่งดี',
+      body: twBarsHtml(per((ym,a) => a.avgfix), 'นาที') +
+        twEventsHtml(DAILY.filter(d => dayStatus(d) === 'issue' && isNum(d.duration_min)).slice().reverse(), 'เวลาแก้ไขของแต่ละเหตุการณ์',
+          r => `<b>${r.duration_min} นาที</b>${r.detected_time ? ' · ตรวจพบ ' + escapeHtml(r.detected_time) : ''} · ${twNote(r)}`)};
+    case '3-1': { const list = DAILY.filter(d => d.fixed_before_830 === 1);
+      return {desc:'จำนวนครั้งที่แก้ไขปัญหาเสร็จก่อน 08:30 น. ซึ่งเป็นเวลาก่อนเริ่มคาบเรียนแรก',
+        body: twBarsHtml(per(ym => daysIn(ym).filter(d => d.fixed_before_830 === 1).length), 'ครั้ง') +
+          twEventsHtml(list.slice().reverse(), 'รายการที่แก้ทันก่อน 08:30', r => twNote(r))}; }
+    case '3-2': { const list = DAILY.filter(d => d.auto_calc === 1);
+      return {desc:'จำนวนวันที่ตรวจพบเหตุช่วงเช้าและแก้ไขได้ก่อนกระทบการเรียนการสอน',
+        body: twBarsHtml(per((ym,a) => a.prevented), 'ครั้ง') + twEventsHtml(list.slice().reverse(), 'เหตุที่ป้องกันได้ทั้งหมด', r => twNote(r))}; }
+    case '4-0': return {desc:`นับวันให้บริการต่อเนื่องโดยไม่เกิดเหตุขัดข้องระหว่างเรียน ถึงวันที่ ${L ? dateShort(L.date) : '—'}`,
+      body: twBarsHtml(sortedYms().map(ym => ({ym, v: monthlyByYm[ym].streakDays})), 'วัน')};
+    case '4-1': return {desc:'สัดส่วนวันที่การเรียนการสอนดำเนินได้ตามแผน จากวันที่มีการบันทึกข้อมูลนี้',
+      body: twBarsHtml(per(ym => { const b = daysIn(ym).filter(d => isNum(d.teaching_on_plan)); return b.length ? Math.round(b.filter(d => d.teaching_on_plan === 1).length / b.length * 100) : null; }), '%')};
+    case '4-2': { const list = DAILY.filter(d => d.incident_during_class === 1);
+      return {desc:'จำนวนวันที่เกิดเหตุขัดข้องระหว่างการเรียนการสอน',
+        body: twEventsHtml(list.slice().reverse(), 'วันที่เกิดเหตุขัดข้องระหว่างเรียน', r => twNote(r))}; }
+    case '5-0': return {desc:'เดือนที่มีการสรุปผลครบทั้งเดือน พร้อมข้อสรุปสถานการณ์ของแต่ละเดือน',
+      body: `<div class="m-events">${sortedYms().slice().reverse().map(ym => { const r = monthlyByYm[ym];
+        return `<button type="button" class="m-event kbar-like" data-ym="${ym}"><span class="m-event-date">${ymShort(ym)} ${String(ymParts(ym)[0]+543).slice(-2)}</span>
+          <span class="m-event-note"><b>${fmt(r.overall)}%</b>${r.interp ? ' · ' + escapeHtml(r.interp) : ''}${isPartialMonth(r) ? ' (ยังไม่ครบเดือน)' : ''}</span><span class="m-event-go">เปิดเดือน</span></button>`; }).join('')}</div>`};
+    case '5-1': return {desc:'การเปลี่ยนแปลงของความพร้อมภาพรวมเมื่อเทียบกับเดือนก่อนหน้า',
+      body: `<div class="m-events">${sortedYms().slice().reverse().map(ym => { const r = monthlyByYm[ym];
+        const c = r.change; const cls = !isNum(c) ? '' : c > 0 ? 'better' : c < 0 ? 'worse' : 'flat';
+        return `<button type="button" class="m-event kbar-like" data-ym="${ym}"><span class="m-event-date">${ymShort(ym)}</span>
+          <span class="m-event-note">${fmt(r.overall)}% <span class="delta ${cls}">${isNum(c) ? (c > 0 ? '▲ ' : c < 0 ? '▼ ' : '') + Math.abs(c) + '%' : '—'}</span></span><span class="m-event-go">เปิดเดือน</span></button>`; }).join('')}</div>`};
+    case '5-2': return {desc:`ข้อสรุปและรายงานฉบับเต็มของ${t.lastYm ? ymLong(t.lastYm) : 'เดือนล่าสุด'}`,
+      body: t.lastYm ? twMonthBlocks(t.lastYm) : ''};
+  }
+  return {desc:'', body:''};
+}
+function openTwinMetric(i, k){
+  const st = TWIN_STEPS[i], t = twStats();
+  const m = twMetrics(i, t)[k]; if(!m) return;
+  const d = twMetricDetail(i, k, t);
+  const body = document.getElementById('kpiModalBody');
+  body.className = '';
+  body.style.setProperty('--mk', `var(${st.c})`);
+  const v = String(m[0]);
+  body.innerHTML = `
+    <div class="m-head">
+      <button type="button" class="m-close" data-close aria-label="ปิด">✕</button>
+      <h2 id="kpiModalTitle">${st.icon} ขั้นตอนที่ ${i+1} · ${m[1]}</h2>
+      <div class="m-total" style="${v.length > 16 ? 'font-size:20px;font-family:var(--font-th);line-height:1.45' : ''}">${escapeHtml(v)}</div>
+      <p>${d.desc}</p>
+    </div>
+    <div class="m-body">${d.body || ''}</div>`;
+  const dlg = document.getElementById('kpiModal');
+  if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+  hideTip();
+}
+
 function renderTwin(){
   if(!document.getElementById('twinSvg')) return;
   if(!TW.built){
     twBuild();
     document.getElementById('twinSteps').addEventListener('click', e => { const b = e.target.closest('.tw-step'); if(b) twSelect(+b.dataset.step, true); });
     document.getElementById('twinPanel').addEventListener('click', e => {
+      const mt = e.target.closest('[data-metric]'); if(mt) return openTwinMetric(TW.active, +mt.dataset.metric);
       const s2 = e.target.closest('[data-step]'); if(s2) return twSelect(+s2.dataset.step, true);
       const go = e.target.closest('[data-go]'); if(go) twGo(go.dataset.go);
     });
