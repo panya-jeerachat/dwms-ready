@@ -581,6 +581,84 @@
   .tw-step .bar{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--c);}
   @media (prefers-reduced-motion:reduce){ .twin-svg{transform:none !important;} }
 
+
+  /* =========================================================
+     MONITORING ROUTE (linear 3D steps, left → right)
+     ========================================================= */
+  section.rt{margin-bottom:20px;padding:22px 22px 18px;}
+  .rt-head{display:flex;gap:14px;align-items:flex-start;}
+  .rt-logo{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;
+    background:linear-gradient(135deg,var(--hero-a),var(--hero-b) 60%,var(--hero-c));box-shadow:0 8px 18px -8px var(--hero-b);}
+  .rt-title{margin:0;font-size:20px;line-height:1.35;}
+  .rt-desc{margin:4px 0 0;font-size:13.5px;color:var(--text-secondary);line-height:1.6;max-width:88ch;}
+  .rt-chips{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 14px;}
+  .rt-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--border-soft);background:var(--bg-surface);box-shadow:var(--shadow);font-size:13px;color:var(--text-secondary);}
+  .rt-chip i{width:9px;height:9px;border-radius:50%;background:var(--c);}
+  .rt-chip b{color:var(--text-primary);font-size:15px;}
+  .rt-scroll{overflow-x:auto;border-radius:18px;scroll-snap-type:x proximity;}
+  .rt-stage{position:relative;min-width:960px;border-radius:18px;padding:22px 14px 30px;overflow:hidden;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--hero-a) 7%,var(--bg-surface)) 0%,color-mix(in srgb,var(--hero-c) 9%,var(--bg-surface-2)) 100%);
+    border:1px solid var(--border-soft);}
+  .rt-floor{position:absolute;left:5%;right:5%;bottom:-70px;height:200px;border-radius:16px;
+    background:
+      repeating-linear-gradient(90deg,color-mix(in srgb,var(--today) 10%,transparent) 0 1px,transparent 1px 46px),
+      repeating-linear-gradient(0deg,color-mix(in srgb,var(--today) 10%,transparent) 0 1px,transparent 1px 30px),
+      color-mix(in srgb,var(--bg-surface) 70%,transparent);
+    transform:perspective(700px) rotateX(58deg);transform-origin:bottom;box-shadow:0 0 40px -10px color-mix(in srgb,var(--hero-b) 25%,transparent);}
+  .rt-path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+  .rt-path .base{fill:none;stroke:color-mix(in srgb,var(--text-tertiary) 22%,transparent);stroke-width:10;stroke-linecap:round;}
+  .rt-path .flow{fill:none;stroke:url(#rtGrad);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:10 9;animation:rtFlow 1.4s linear infinite;}
+  @keyframes rtFlow{to{stroke-dashoffset:-38;}}
+  .rt-path .node{fill:var(--bg-surface);stroke-width:2.5;}
+  .rt-path .dot{fill:#fff;stroke:var(--today);stroke-width:3;filter:drop-shadow(0 0 6px var(--today));}
+  .rt-grid{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto 196px;column-gap:14px;}
+
+  .rt-card{all:unset;box-sizing:border-box;cursor:pointer;position:relative;grid-row:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;
+    padding:22px 10px 12px;border-radius:16px;background:var(--bg-surface);border:1.5px solid var(--border-soft);box-shadow:var(--shadow);scroll-snap-align:start;
+    transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease;}
+  .rt-card:hover{transform:translateY(-3px);border-color:var(--c);}
+  .rt-card:focus-visible{outline:2px solid var(--c);outline-offset:2px;}
+  .rt-card.active{border-color:var(--c);transform:translateY(-4px);box-shadow:0 14px 26px -12px var(--c),0 0 0 4px color-mix(in srgb,var(--c) 14%,transparent);}
+  .rt-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);white-space:nowrap;height:26px;min-width:26px;padding:0 9px;border-radius:999px;display:grid;place-items:center;
+    font-family:var(--font-mono);font-weight:700;font-size:12px;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 75%,#fff),var(--c));box-shadow:0 4px 10px -4px var(--c);}
+  :root[data-theme="dark"] .rt-badge{color:#1a0e11;}
+  .rt-name{font-weight:700;font-size:14px;line-height:1.35;color:var(--text-primary);}
+  .rt-name span{margin-right:3px;}
+  .rt-when{font-size:11.5px;color:var(--text-tertiary);line-height:1.4;}
+  .rt-big{margin-top:6px;font-weight:700;font-size:15px;color:var(--c-ink);line-height:1.35;overflow-wrap:anywhere;}
+  .rt-big small{display:block;font-weight:500;font-size:11.5px;color:var(--text-secondary);}
+  .rt-sub{font-size:11.5px;color:var(--text-secondary);line-height:1.45;overflow-wrap:anywhere;}
+  .rt-more{margin-top:auto;padding-top:8px;font-size:12px;font-weight:700;color:var(--c-ink);text-decoration:underline;text-underline-offset:3px;}
+
+  .rt-cell{grid-row:2;display:flex;flex-direction:column;align-items:center;position:relative;}
+  .rt-conn{width:0;border-left:2px dashed color-mix(in srgb,var(--c) 70%,transparent);}
+  .rt-cubewrap{all:unset;cursor:pointer;position:relative;width:76px;height:76px;margin-top:10px;perspective:700px;animation:rtBob 3.6s ease-in-out infinite;animation-delay:calc(var(--i) * -.6s);}
+  .rt-cubewrap:focus-visible{outline:2px solid var(--c);outline-offset:8px;border-radius:12px;}
+  @keyframes rtBob{50%{transform:translateY(-6px);}}
+  .rt-cube{--s:62px;position:absolute;left:7px;top:7px;width:var(--s);height:var(--s);transform-style:preserve-3d;
+    transform:rotateX(-20deg) rotateY(-28deg);transition:transform .45s cubic-bezier(.3,1.4,.5,1);}
+  .rt-cell.active .rt-cube{transform:translateY(-10px) rotateX(-20deg) rotateY(-28deg) scale(1.08);}
+  .rt-face{position:absolute;inset:0;border-radius:9px;backface-visibility:hidden;}
+  .rt-face.f{transform:translateZ(calc(var(--s) / 2));display:grid;place-items:center;color:#fff;font:700 24px var(--font-mono);text-shadow:0 2px 6px rgba(0,0,0,.25);
+    background:linear-gradient(145deg,color-mix(in srgb,var(--c) 65%,#fff) 0%,var(--c) 55%,color-mix(in srgb,var(--c) 78%,#000) 100%);}
+  .rt-face.r{transform:rotateY(90deg) translateZ(calc(var(--s) / 2));background:linear-gradient(160deg,color-mix(in srgb,var(--c) 72%,#000),color-mix(in srgb,var(--c) 52%,#000));}
+  .rt-face.t{transform:rotateX(90deg) translateZ(calc(var(--s) / 2));background:color-mix(in srgb,var(--c) 50%,#fff);}
+  .rt-shadow{position:absolute;left:50%;bottom:-14px;width:70px;height:16px;transform:translateX(-50%);border-radius:50%;
+    background:radial-gradient(closest-side,color-mix(in srgb,var(--c) 45%,rgba(0,0,0,.25)),transparent);}
+  .rt-cell.active .rt-shadow{background:radial-gradient(closest-side,var(--c),transparent);opacity:.8;}
+  .rt-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--text-tertiary);}
+  .rt-foot .btn{margin-left:auto;}
+  .rt-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#fff;border:2.5px solid var(--today);margin-right:6px;vertical-align:-1px;}
+  .rt-swipe{display:none;font-weight:600;color:var(--today-ink);}
+  @media (max-width:1000px){ .rt-swipe{display:inline;} }
+  @media (prefers-reduced-motion:reduce){ .rt-cubewrap{animation:none;} .rt-path .flow{animation:none;} }
+  /* step pop-up */
+  .sp-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  @media (max-width:520px){ .sp-metrics{grid-template-columns:1fr;} }
+  .sp-nav{display:flex;justify-content:space-between;gap:10px;border-top:1px dashed var(--border);padding-top:12px;}
+  .sp-nav button{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-secondary);}
+  .sp-nav button:hover,.sp-nav button:focus-visible{color:var(--today-ink);text-decoration:underline;}
+
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
   }
@@ -655,25 +733,27 @@
 
   <section class="card trend-h" id="trendPanel"></section>
 
-  <section class="card twin" id="twinSection" aria-labelledby="twinTitle">
-    <div class="twin-head">
+  <section class="card rt" id="twinSection" aria-labelledby="twinTitle">
+    <div class="rt-head">
+      <div class="rt-logo" aria-hidden="true">🛰️</div>
       <div>
-        <div class="card-title" id="twinTitle">Digital Twin · เส้นทางการกำกับติดตามความพร้อมโครงสร้างพื้นฐาน</div>
-        <div class="card-subtitle">แบบจำลอง 3 มิติของกระบวนการ 6 ขั้นตอน ขับเคลื่อนด้วยข้อมูลจริง · ชี้หรือคลิกที่สถานีเพื่อดูรายละเอียด · เลื่อนเมาส์บนภาพเพื่อเอียงมุมมอง</div>
-      </div>
-      <div class="twin-ctrl">
-        <span class="twin-live" id="twinLive">จำลองจากข้อมูลจริง</span>
-        <button class="btn" id="twinPlay" type="button" aria-pressed="true">⏸ หยุดนำชม</button>
+        <h2 class="rt-title" id="twinTitle">เส้นทางการกำกับติดตามความพร้อมโครงสร้างพื้นฐาน</h2>
+        <p class="rt-desc">ทุกวันทำการ งานตรวจความพร้อมเดินทางผ่าน 6 ขั้นตอน ตามลำดับจากซ้ายไปขวา แล้ววนกลับเริ่มรอบใหม่ ตัวเลขในแต่ละขั้นคือข้อมูลจริงจากระบบ · คลิกที่การ์ดหรือกล่องเพื่อดูรายละเอียด</p>
       </div>
     </div>
-    <div class="twin-grid">
-      <div class="twin-stage" id="twinStage">
-        <svg id="twinSvg" class="twin-svg" role="img" aria-label="แบบจำลองสามมิติแสดงเส้นทางการกำกับติดตาม 6 ขั้นตอน"></svg>
-        <div class="twin-legend"><span><i style="background:var(--ready)"></i>งานปกติ</span><span><i style="background:var(--issue)"></i>งานที่พบปัญหา · เปลี่ยนเป็นเขียวเมื่อผ่านขั้นแก้ไข</span></div>
+    <div class="rt-chips" id="rtChips"></div>
+    <div class="rt-scroll">
+      <div class="rt-stage" id="rtStage">
+        <div class="rt-floor" aria-hidden="true"></div>
+        <svg class="rt-path" id="rtPath" aria-hidden="true"></svg>
+        <div class="rt-grid" id="rtGrid"></div>
       </div>
-      <div class="twin-panel" id="twinPanel" aria-live="polite"></div>
     </div>
-    <div class="twin-steps" id="twinSteps" role="group" aria-label="เลือกขั้นตอน"></div>
+    <div class="rt-foot">
+      <span class="rt-swipe">เลื่อนซ้าย-ขวาเพื่อดูครบทุกขั้นตอน →</span>
+      <span class="rt-legend"><i></i>จุดเคลื่อนที่แสดงงานที่กำลังเดินผ่านแต่ละขั้นตอน</span>
+      <button class="btn" id="twinPlay" type="button" aria-pressed="true">⏸ หยุดการเคลื่อนไหว</button>
+    </div>
   </section>
 
   <div class="kpi-row">
@@ -1658,7 +1738,8 @@ function openKpi(kind){
       ${evHtml}
     </div>`;
   const dlg = document.getElementById('kpiModal');
-  if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+  if(!dlg.open){ if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open',''); }
+  dlg.scrollTop = 0;
   hideTip();
 }
 function closeKpi(){ const dlg = document.getElementById('kpiModal'); if(dlg.open) dlg.close ? dlg.close() : dlg.removeAttribute('open'); }
@@ -1690,44 +1771,29 @@ document.querySelectorAll('.kpi-card[data-kpi]').forEach(card => {
    (pure SVG, no external library; driven by DAILY / MONTHLY)
    ========================================================= */
 const TWIN_STEPS = [
-  {icon:'🔍', short:'ตรวจสำรวจ', title:'ตรวจสำรวจความพร้อมประจำวัน', when:'ทุกเช้าก่อนเริ่มการเรียนการสอน', c:'--info', ink:'--info-ink', pos:[2,2],
+  {icon:'🔍', short:'ตรวจสำรวจ', title:'ตรวจสำรวจความพร้อมประจำวัน', when:'ทุกเช้าก่อนเริ่มการเรียนการสอน', whenShort:'ทุกเช้าก่อนเริ่มเรียน', c:'--info', ink:'--info-ink', pos:[2,2],
    desc:'เดินตรวจระบบสนับสนุนการเรียนการสอนครบ 9 ด้าน ตั้งแต่ห้องเรียน เครือข่าย LAN/WiFi กล้องวงจรปิด ไปจนถึงระบบไฟฟ้า',
    action:{label:'ดูผลตรวจรายวันในปฏิทิน', go:'calendar'}},
-  {icon:'📲', short:'บันทึกดิจิทัล', title:'บันทึกผลเข้าสู่ระบบดิจิทัล', when:'ทันทีหลังตรวจแต่ละจุด', c:'--today', ink:'--today-ink', pos:[7.5,2],
+  {icon:'📲', short:'บันทึกดิจิทัล', title:'บันทึกผลเข้าสู่ระบบดิจิทัล', when:'ทันทีหลังตรวจแต่ละจุด', whenShort:'ทันทีหลังตรวจ', c:'--today', ink:'--today-ink', pos:[7.5,2],
    desc:'บันทึกผลลง Google Sheet แทนแบบฟอร์มกระดาษ ทุกด้านใช้ค่ามาตรฐานเดียวกัน คือ 0 = พร้อม และ 1 = พบปัญหา',
    action:{label:'ดูผลการลดกระดาษ', go:'kpi:paper'}},
-  {icon:'📊', short:'ประมวลผล', title:'ประมวลผลและแสดงสถานะแบบเรียลไทม์', when:'อัตโนมัติเมื่อข้อมูลเข้าระบบ', c:'--issue', ink:'--issue-ink', pos:[13,2],
+  {icon:'📊', short:'ประมวลผล', title:'ประมวลผลและแสดงสถานะแบบเรียลไทม์', when:'อัตโนมัติเมื่อข้อมูลเข้าระบบ', whenShort:'อัตโนมัติ · เรียลไทม์', c:'--issue', ink:'--issue-ink', pos:[13,2],
    desc:'ระบบคำนวณความพร้อมภาพรวมแล้วแสดงบนหน้านี้ทันที ผู้บริหาร ผู้สอน และผู้ใช้บริการเห็นสถานะชุดเดียวกัน',
    action:{label:'ดูภาพรวมการให้บริการ', go:'streak'}},
-  {icon:'🛠️', short:'แจ้งเตือน-แก้ไข', title:'แจ้งเตือนและแก้ไขปัญหา', when:'ทันทีที่ตรวจพบ · เป้าหมายก่อน 08:30 น.', c:'--bad', ink:'--bad-ink', pos:[13,8],
+  {icon:'🛠️', short:'แจ้งเตือน-แก้ไข', title:'แจ้งเตือนและแก้ไขปัญหา', when:'ทันทีที่ตรวจพบ · เป้าหมายก่อน 08:30 น.', whenShort:'ทันทีที่พบ · ก่อน 08:30 น.', c:'--bad', ink:'--bad-ink', pos:[13,8],
    desc:'เมื่อพบปัญหาจะบันทึกเวลาตรวจพบ ประสานแก้ไข และบันทึกเวลาที่ใช้ เพื่อให้ห้องเรียนพร้อมก่อนเริ่มคาบแรก',
    action:{label:'ดูสถิติเวลาแก้ไข', go:'kpi:avgfix'}},
-  {icon:'🎓', short:'พร้อมใช้งาน', title:'ยืนยันความพร้อมและให้บริการ', when:'ตลอดวันทำการ', c:'--ready', ink:'--ready-ink', pos:[7.5,8],
+  {icon:'🎓', short:'พร้อมใช้งาน', title:'ยืนยันความพร้อมและให้บริการ', when:'ตลอดวันทำการ', whenShort:'ตลอดวันทำการ', c:'--ready', ink:'--ready-ink', pos:[7.5,8],
    desc:'ห้องเรียนและระบบสนับสนุนพร้อมใช้งานตามแผน และนับวันให้บริการต่อเนื่องโดยไม่เกิดเหตุขัดข้องระหว่างเรียน',
    action:{label:'ดูเหตุที่ป้องกันได้', go:'kpi:prevented'}},
-  {icon:'🔄', short:'สรุป-ปรับปรุง', title:'สรุปรายเดือนและปรับปรุงต่อเนื่อง', when:'ทุกสิ้นเดือน', c:'--twin-blue', ink:'--twin-blue', pos:[2,8],
+  {icon:'🔄', short:'สรุป-ปรับปรุง', title:'สรุปรายเดือนและปรับปรุงต่อเนื่อง', when:'ทุกสิ้นเดือน', whenShort:'ทุกสิ้นเดือน', c:'--twin-blue', ink:'--twin-blue', pos:[2,8],
    desc:'วิเคราะห์แนวโน้ม กำหนดมาตรการ และติดตามผลลัพธ์ แล้วนำบทเรียนกลับไปปรับการตรวจรอบถัดไปตามวงจร PDCA',
    action:{label:'ดูแนวโน้มรายเดือน', go:'trend'}},
 ];
-const TW = {s:25, built:false, active:0, playing:true, stepStart:0, STEP_MS:6500,
-  heights:[], targets:[], hIdle:.55, hActive:1.45, packets:[], pathEl:null, len:0, stationAt:[],
-  issueRate:.12, raf:null, visible:true, last:0, reduce:false, refs:[]};
+const TW = {active:0, playing:true, built:false, reduce:false, raf:null, visible:true, t0:0, pausedAt:0,
+  LOOP_MS:15000, pathEl:null, len:0, nodeAt:[], dot:null};
 TW.reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(TW.reduce) TW.playing = false;
-
-function twIso(x,y,z){ return [(x-y)*0.866*TW.s, (x+y)*0.5*TW.s - z*TW.s]; }
-function twPts(a){ return a.map(p => twIso(p[0],p[1],p[2]).map(n => n.toFixed(1)).join(',')).join(' '); }
-function twBox(x,y,w,d,h,z0){
-  const z1 = z0 + h;
-  return {
-    top:   twPts([[x,y,z1],[x+w,y,z1],[x+w,y+d,z1],[x,y+d,z1]]),
-    left:  twPts([[x,y+d,z0],[x+w,y+d,z0],[x+w,y+d,z1],[x,y+d,z1]]),
-    right: twPts([[x+w,y,z0],[x+w,y+d,z0],[x+w,y+d,z1],[x+w,y,z1]]),
-  };
-}
-function twShade(cv){ return {
-  top:`fill:color-mix(in srgb,var(${cv}) 70%,#fff)`, left:`fill:var(${cv})`, right:`fill:color-mix(in srgb,var(${cv}) 68%,#000)`}; }
-function twBoxSvg(f, st, extra){ return `<g ${extra||''}><polygon points="${f.left}" style="${st.left}"/><polygon points="${f.right}" style="${st.right}"/><polygon class="tw-top" points="${f.top}" style="${st.top}"/></g>`; }
 
 function twStats(){
   const days = DAILY.length;
@@ -1761,184 +1827,7 @@ function twMetrics(i, t){
   }
   return [];
 }
-function tipStep(i){
-  const st = TWIN_STEPS[i]; if(!st) return '';
-  const m = twMetrics(i, twStats());
-  return `<div class="tip-title">${st.icon} ${i+1}. ${st.title}</div>
-    <div class="tip-row"><span>🕒 ${st.when}</span></div>
-    ${m.slice(0,2).map(x => `<div class="tip-row"><span>${x[1]}</span><b>${escapeHtml(x[0])}</b></div>`).join('')}
-    ${i === TW.active ? '' : '<div class="tip-hint">คลิกเพื่อดูขั้นตอนนี้</div>'}`;
-}
-
-function twBuild(){
-  const svg = document.getElementById('twinSvg'); if(!svg) return;
-  const S = TW.s, W = 15, D = 10;
-  const xs = [twIso(0,D,0)[0], twIso(W,0,0)[0]];
-  const vb = {x: xs[0]-20, y: -96, w: xs[1]-xs[0]+48, h: twIso(W,D,-.5)[1] + 140};
-  svg.setAttribute('viewBox', `${vb.x.toFixed(0)} ${vb.y} ${vb.w.toFixed(0)} ${vb.h.toFixed(0)}`);
-
-  let g = `<defs>
-      ${TWIN_STEPS.map((st,i) => `<linearGradient id="twBeam${i}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:var(${st.c});stop-opacity:.85"/><stop offset="1" style="stop-color:var(${st.c});stop-opacity:0"/></linearGradient>`).join('')}
-      <filter id="twSoft" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="10"/></filter>
-    </defs>`;
-  // platform shadow + slab
-  const sh = twPts([[0,0,-.5],[W,0,-.5],[W,D,-.5],[0,D,-.5]]);
-  g += `<polygon points="${sh}" transform="translate(0,22)" style="fill:color-mix(in srgb,var(--hero-b) 30%,transparent)" filter="url(#twSoft)"/>`;
-  const pf = twBox(0,0,W,D,.5,-.5);
-  g += `<polygon points="${pf.left}" style="fill:var(--bg-surface-3)"/><polygon points="${pf.right}" style="fill:color-mix(in srgb,var(--bg-surface-3) 86%,#000)"/><polygon points="${pf.top}" style="fill:var(--bg-surface);stroke:var(--border)"/>`;
-  // grid
-  let grid = '';
-  for(let x=1; x<W; x++) grid += `<line x1="${twIso(x,0,0)[0]}" y1="${twIso(x,0,0)[1]}" x2="${twIso(x,D,0)[0]}" y2="${twIso(x,D,0)[1]}"/>`;
-  for(let y=1; y<D; y++) grid += `<line x1="${twIso(0,y,0)[0]}" y1="${twIso(0,y,0)[1]}" x2="${twIso(W,y,0)[0]}" y2="${twIso(W,y,0)[1]}"/>`;
-  g += `<g style="stroke:var(--border-soft);stroke-width:1">${grid}</g>`;
-  // route
-  const route = TWIN_STEPS.map(st => twIso(st.pos[0], st.pos[1], 0));
-  const d = 'M' + route.map(p => p.map(n => n.toFixed(1)).join(',')).join(' L') + ' Z';
-  g += `<path class="tw-route-base" d="${d}"/><path class="tw-route-flow" id="twRoute" d="${d}"/>`;
-  g += `<g id="twPackets"></g>`;
-  // hub link (drawn under stations)
-  g += `<line class="tw-link" id="twLink" x1="0" y1="0" x2="0" y2="0"/>`;
-
-  // stations + hub sorted by depth
-  const items = TWIN_STEPS.map((st,i) => ({i, depth: st.pos[0]+st.pos[1]}));
-  items.push({i:-1, depth: 12.51});
-  items.sort((a,b) => a.depth - b.depth);
-  items.forEach(it => {
-    if(it.i === -1){
-      const hb = twBox(7.05,4.55,.9,.9,1.3,0);
-      const top = twIso(7.5,5,1.3);
-      g += `<g id="twHub">${twBoxSvg(hb, twShade('--twin-hub'))}
-        <ellipse class="tw-halo" cx="${top[0]}" cy="${top[1]}" rx="${S*1.15}" ry="${S*.66}"/>
-        <text class="tw-hub-lab" x="${top[0]}" y="${top[1]-S*1.0}" text-anchor="middle">DIGITAL TWIN</text></g>`;
-      return;
-    }
-    const st = TWIN_STEPS[it.i], [cx,cy] = st.pos;
-    const ped = twBox(cx-1.05, cy-1.05, 2.1, 2.1, .3, 0);
-    const c0 = twIso(cx,cy,0);
-    g += `<g class="tw-st" id="twSt${it.i}" data-step="${it.i}" data-tip="step:${it.i}" tabindex="0" role="button" aria-label="ขั้นตอนที่ ${it.i+1} ${st.title}" style="--c:var(${st.c})">
-      <ellipse class="tw-ring" cx="${c0[0]}" cy="${c0[1]}" rx="${S*1.75}" ry="${S*1.0}" style="stroke:var(${st.c})"/>
-      <g><polygon points="${ped.left}" style="fill:var(--bg-surface-3)"/><polygon points="${ped.right}" style="fill:color-mix(in srgb,var(--bg-surface-3) 82%,#000)"/><polygon class="tw-ped-top" points="${ped.top}" style="fill:color-mix(in srgb,var(${st.c}) 14%,var(--bg-surface))"/></g>
-      <g class="tw-mod"><polygon data-f="left" style="${twShade(st.c).left}"/><polygon data-f="right" style="${twShade(st.c).right}"/><polygon data-f="top" style="${twShade(st.c).top}"/></g>
-      <rect class="tw-beam" x="-8" y="-78" width="16" height="78" rx="8" style="fill:url(#twBeam${it.i})"/>
-      <g class="tw-ico"><text x="0" y="0" text-anchor="middle" font-size="22">${st.icon}</text></g>
-      <g class="tw-pill"><rect x="0" y="-16" height="24" rx="12"/><text y="0"><tspan class="tw-pn">${it.i+1}</tspan><tspan dx="6">${st.short}</tspan></text></g>
-    </g>`;
-  });
-  svg.innerHTML = g;
-
-  // pill sizing (text width known only after render)
-  TWIN_STEPS.forEach((st,i) => {
-    const el = document.getElementById('twSt'+i);
-    const txt = el.querySelector('.tw-pill text'), rect = el.querySelector('.tw-pill rect');
-    let w = 90; try{ w = txt.getBBox().width + 22; }catch(e){}
-    rect.setAttribute('width', w.toFixed(0)); rect.setAttribute('x', (-w/2).toFixed(0)); txt.setAttribute('x', (-w/2 + 11).toFixed(0));
-    rect.style.stroke = `color-mix(in srgb,var(${st.c}) 55%,var(--border))`;
-    TW.refs[i] = {el, mod: el.querySelectorAll('.tw-mod polygon'), beam: el.querySelector('.tw-beam'), ico: el.querySelector('.tw-ico'), pill: el.querySelector('.tw-pill')};
-    TW.heights[i] = TW.hIdle; TW.targets[i] = TW.hIdle;
-    el.addEventListener('click', () => twSelect(i, true));
-    el.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); twSelect(i, true); } });
-  });
-
-  // route geometry for packets
-  TW.pathEl = document.getElementById('twRoute');
-  TW.len = TW.pathEl.getTotalLength();
-  let acc = 0; TW.stationAt = [0];
-  for(let i=1;i<route.length;i++){ acc += Math.hypot(route[i][0]-route[i-1][0], route[i][1]-route[i-1][1]); TW.stationAt.push(acc); }
-  const pg = document.getElementById('twPackets');
-  const N = 16; TW.packets = [];
-  let html = '';
-  for(let k=0;k<N;k++) html += `<circle class="tw-pk ok" r="4.6"/>`;
-  pg.innerHTML = html;
-  pg.querySelectorAll('circle').forEach((c,k) => {
-    const p = {el:c, d: (k/N)*TW.len, bad: Math.random() < TW.issueRate};
-    TW.packets.push(p);
-  });
-
-  // stage tilt
-  const stage = document.getElementById('twinStage');
-  if(!TW.reduce){
-    stage.addEventListener('pointermove', e => {
-      if(e.pointerType !== 'mouse') return;
-      const r = stage.getBoundingClientRect();
-      const nx = (e.clientX - r.left)/r.width - .5, ny = (e.clientY - r.top)/r.height - .5;
-      svg.style.setProperty('--ry', (nx*10).toFixed(2)+'deg');
-      svg.style.setProperty('--rx', (-ny*8).toFixed(2)+'deg');
-    });
-    stage.addEventListener('pointerleave', () => { svg.style.setProperty('--ry','0deg'); svg.style.setProperty('--rx','0deg'); });
-  }
-  document.getElementById('twinPlay').addEventListener('click', () => twSetPlaying(!TW.playing));
-  if('IntersectionObserver' in window){
-    new IntersectionObserver(es => { TW.visible = es[0].isIntersecting; if(TW.visible) twKick(); }, {threshold:.05}).observe(stage);
-  }
-  document.addEventListener('visibilitychange', () => { if(!document.hidden) twKick(); });
-  TW.built = true;
-}
-
-function twPlaceStation(i){
-  const st = TWIN_STEPS[i], [cx,cy] = st.pos, h = TW.heights[i], r = TW.refs[i];
-  const f = twBox(cx-.65, cy-.65, 1.3, 1.3, h, .3);
-  r.mod[0].setAttribute('points', f.left); r.mod[1].setAttribute('points', f.right); r.mod[2].setAttribute('points', f.top);
-  const top = twIso(cx, cy, .3 + h);
-  const bob = (i === TW.active && !TW.reduce) ? Math.sin(performance.now()/420) * 3 : 0;
-  r.ico.setAttribute('transform', `translate(${top[0].toFixed(1)},${(top[1]-18+bob).toFixed(1)})`);
-  r.pill.setAttribute('transform', `translate(${top[0].toFixed(1)},${(top[1]-50+bob).toFixed(1)})`);
-  r.beam.setAttribute('transform', `translate(${top[0].toFixed(1)},${(top[1]+4).toFixed(1)})`);
-}
-function twFrame(now){
-  TW.raf = null;
-  const dt = TW.last ? Math.min(64, now - TW.last) : 16; TW.last = now;
-  // heights ease toward target
-  let moving = false;
-  TWIN_STEPS.forEach((_,i) => {
-    const t = TW.targets[i], h = TW.heights[i];
-    const nh = TW.reduce ? t : h + (t - h) * Math.min(1, dt/140);
-    if(Math.abs(nh - t) > .002) moving = true;
-    TW.heights[i] = Math.abs(nh - t) < .002 ? t : nh;
-    twPlaceStation(i);
-  });
-  // hub → active station link
-  const a = TWIN_STEPS[TW.active], ht = TW.heights[TW.active];
-  const p1 = twIso(7.5,5,1.3), p2 = twIso(a.pos[0], a.pos[1], .3 + ht);
-  const link = document.getElementById('twLink');
-  link.setAttribute('x1', p1[0]); link.setAttribute('y1', p1[1]); link.setAttribute('x2', p2[0]); link.setAttribute('y2', p2[1]);
-  // packets travel the route; an issue packet turns green once it passes the fix station
-  const speed = TW.reduce ? 0 : TW.len / 16000;
-  const fixAt = TW.stationAt[3];
-  TW.packets.forEach(p => {
-    const prev = p.d;
-    p.d += speed * dt;
-    if(p.d >= TW.len){ p.d -= TW.len; p.bad = Math.random() < TW.issueRate; }
-    if(p.bad && prev < fixAt && p.d >= fixAt) p.bad = false;
-    const pt = TW.pathEl.getPointAtLength(p.d);
-    p.el.setAttribute('cx', pt.x.toFixed(1)); p.el.setAttribute('cy', pt.y.toFixed(1));
-    p.el.setAttribute('class', 'tw-pk ' + (p.bad ? 'bad' : 'ok'));
-  });
-  // autoplay progress
-  const bar = document.querySelector('.tw-step.active .bar');
-  if(TW.playing){
-    const prog = Math.min(1, (now - TW.stepStart) / TW.STEP_MS);
-    if(bar) bar.style.width = (prog*100).toFixed(1) + '%';
-    if(prog >= 1) twSelect((TW.active + 1) % TWIN_STEPS.length, false);
-  } else if(bar) bar.style.width = '0%';
-  if((TW.visible && !document.hidden) && (!TW.reduce || moving)) TW.raf = requestAnimationFrame(twFrame);
-}
-function twKick(){ if(!TW.raf && TW.built){ TW.last = 0; TW.raf = requestAnimationFrame(twFrame); } }
-function twSetPlaying(on){
-  TW.playing = on; TW.stepStart = performance.now();
-  const b = document.getElementById('twinPlay');
-  b.textContent = on ? '⏸ หยุดนำชม' : '▶ เล่นนำชมอัตโนมัติ';
-  b.setAttribute('aria-pressed', on ? 'true' : 'false');
-  twKick();
-}
-function twSelect(i, byUser){
-  TW.active = i; TW.stepStart = performance.now();
-  if(byUser && TW.playing) twSetPlaying(false);
-  TWIN_STEPS.forEach((_,k) => {
-    TW.targets[k] = k === i ? TW.hActive : TW.hIdle;
-    if(TW.refs[k]) TW.refs[k].el.classList.toggle('active', k === i);
-  });
-  twRenderPanel(); twRenderSteps(); twKick();
-}
+function tipStep(i){ return ''; }
 function twGo(go){
   if(go.startsWith('kpi:')) return openKpi(go.slice(4));
   const sel = go === 'calendar' ? 'section.cal' : go === 'streak' ? 'section.streak' : '#trendPanel';
@@ -1965,31 +1854,6 @@ function twExample(i, t){
     if(act && act !== INCOMPLETE_TXT) txt = `มาตรการ ${ymShort(t.lastYm)}: ${clip(act, 150)}`;
   }
   return txt ? `<div class="tp-example"><span>ตัวอย่างจากข้อมูลจริง</span>${escapeHtml(txt)}</div>` : '';
-}
-function twRenderPanel(){
-  const i = TW.active, st = TWIN_STEPS[i], t = twStats();
-  const panel = document.getElementById('twinPanel');
-  const prev = TWIN_STEPS[(i+5)%6], next = TWIN_STEPS[(i+1)%6];
-  panel.style.setProperty('--c', `var(${st.c})`);
-  panel.style.setProperty('--c-ink', `var(${st.ink})`);
-  panel.innerHTML = `
-    <div class="tp-top"><span class="tp-num">ขั้นตอนที่ ${i+1} / ${TWIN_STEPS.length}</span><span class="tp-when">🕒 ${st.when}</span></div>
-    <h3 class="tp-title"><span aria-hidden="true">${st.icon}</span><span>${st.title}</span></h3>
-    <p class="tp-desc">${st.desc}</p>
-    <div class="tp-metrics">${twMetrics(i, t).map((m,k) => {
-      const v = String(m[0]); const size = v.length > 16 ? ' long' : v.length > 10 ? ' mid' : '';
-      return `<button type="button" class="tp-m${size}" data-metric="${k}" aria-label="${escapeHtml(m[1])}: ${escapeHtml(v)} · ดูข้อมูลเพิ่มเติม">
-        <span class="tp-m-val">${escapeHtml(v)}</span><span class="tp-m-lab">${m[1]}</span><span class="tp-m-more">ดูข้อมูลเพิ่มเติม ›</span></button>`;
-    }).join('')}</div>
-    ${twExample(i, t)}
-    <button class="tp-action" type="button" data-go="${st.action.go}">${st.action.label} →</button>
-    <div class="tp-flow"><button type="button" data-step="${(i+5)%6}">← ${prev.short}</button><span>${i === 5 ? 'วนกลับสู่การตรวจรอบใหม่' : 'เส้นทางการกำกับติดตาม'}</span><button type="button" data-step="${(i+1)%6}">${next.short} →</button></div>`;
-  panel.classList.remove('swap'); void panel.offsetWidth; panel.classList.add('swap');
-}
-function twRenderSteps(){
-  const wrap = document.getElementById('twinSteps');
-  wrap.innerHTML = TWIN_STEPS.map((st,i) => `<button type="button" class="tw-step${i === TW.active ? ' active' : ''}${i < TW.active ? ' done' : ''}" data-step="${i}" style="--c:var(${st.c})" aria-pressed="${i === TW.active}">
-      <span class="n">${i+1}</span><span>${st.short}</span><span class="bar"></span></button>`).join('');
 }
 
 /* ---------- Digital Twin: per-metric detail pop-up ---------- */
@@ -2101,32 +1965,162 @@ function openTwinMetric(i, k){
   body.innerHTML = `
     <div class="m-head">
       <button type="button" class="m-close" data-close aria-label="ปิด">✕</button>
-      <h2 id="kpiModalTitle">${st.icon} ขั้นตอนที่ ${i+1} · ${m[1]}</h2>
+      <button type="button" data-stepopen="${i}" style="all:unset;cursor:pointer;font-size:12.5px;font-weight:600;opacity:.92">← กลับไปขั้นตอนที่ ${i+1}</button>
+      <h2 id="kpiModalTitle" style="margin-top:4px">${st.icon} ${st.title} · ${m[1]}</h2>
       <div class="m-total" style="${v.length > 16 ? 'font-size:20px;font-family:var(--font-th);line-height:1.45' : ''}">${escapeHtml(v)}</div>
       <p>${d.desc}</p>
     </div>
     <div class="m-body">${d.body || ''}</div>`;
   const dlg = document.getElementById('kpiModal');
-  if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+  if(!dlg.open){ if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open',''); }
+  dlg.scrollTop = 0;
+  hideTip();
+}
+
+/* ---------- Route rendering ---------- */
+function rtCards(t){
+  return TWIN_STEPS.map((st,i) => {
+    const m = twMetrics(i, t);
+    const badge = i === 0 ? 'เริ่ม · 1' : i === TWIN_STEPS.length-1 ? `${i+1} · วนกลับ ↻` : String(i+1);
+    return `<button type="button" class="rt-card${i === TW.active ? ' active' : ''}" data-open="${i}" style="--c:var(${st.c});--c-ink:var(${st.ink});grid-column:${i+1}"
+        aria-label="ขั้นตอนที่ ${i+1} ${st.title} · ดูรายละเอียด">
+      <span class="rt-badge">${badge}</span>
+      <span class="rt-name"><span aria-hidden="true">${st.icon}</span>${st.title}</span>
+      <span class="rt-when">${st.whenShort}</span>
+      <span class="rt-big">${escapeHtml(String(m[0][0]))}<small>${m[0][1]}</small></span>
+      <span class="rt-sub">${m[1][1]}: <b>${escapeHtml(String(m[1][0]))}</b></span>
+      <span class="rt-more">ดูรายละเอียด ›</span>
+    </button>
+    <div class="rt-cell${i === TW.active ? ' active' : ''}" data-cell="${i}" style="--c:var(${st.c});--i:${i};grid-column:${i+1}">
+      <span class="rt-conn" style="height:${20 + (TWIN_STEPS.length-1-i)*12}px"></span>
+      <button type="button" class="rt-cubewrap" data-open="${i}" aria-label="กล่องขั้นตอนที่ ${i+1} ${st.short}">
+        <span class="rt-shadow"></span>
+        <span class="rt-cube"><span class="rt-face t"></span><span class="rt-face r"></span><span class="rt-face f">${i+1}</span></span>
+      </button>
+    </div>`;
+  }).join('');
+}
+function rtDrawPath(){
+  const stage = document.getElementById('rtStage'), svg = document.getElementById('rtPath');
+  if(!stage || !svg) return;
+  const sr = stage.getBoundingClientRect();
+  const pts = [...stage.querySelectorAll('.rt-cubewrap')].map(el => {
+    const r = el.getBoundingClientRect();
+    return [r.left - sr.left + r.width/2, r.bottom - sr.top + 16];
+  });
+  if(pts.length < 2) return;
+  const first = [pts[0][0] - 50, pts[0][1] + 8], last = [pts[pts.length-1][0] + 50, pts[pts.length-1][1] - 6];
+  const all = [first, ...pts, last];
+  // smooth curve through the points (Catmull–Rom → Bézier)
+  let d = `M${all[0][0]},${all[0][1]}`;
+  for(let k=0;k<all.length-1;k++){
+    const p0 = all[k-1] || all[k], p1 = all[k], p2 = all[k+1], p3 = all[k+2] || p2;
+    d += ` C${(p1[0]+(p2[0]-p0[0])/6).toFixed(1)},${(p1[1]+(p2[1]-p0[1])/6).toFixed(1)} ${(p2[0]-(p3[0]-p1[0])/6).toFixed(1)},${(p2[1]-(p3[1]-p1[1])/6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  const stops = TWIN_STEPS.map((st,i) => `<stop offset="${(i/(TWIN_STEPS.length-1)*100).toFixed(0)}%" style="stop-color:var(${st.c})"/>`).join('');
+  svg.setAttribute('viewBox', `0 0 ${sr.width.toFixed(0)} ${sr.height.toFixed(0)}`);
+  svg.innerHTML = `<defs><linearGradient id="rtGrad" x1="0" x2="1" y1="0" y2="0">${stops}</linearGradient></defs>
+    <path class="base" d="${d}"/><path class="flow" id="rtFlow" d="${d}"/>
+    ${pts.map((p,i) => `<circle class="node" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="5.5" style="stroke:var(${TWIN_STEPS[i].c})"/>`).join('')}
+    <circle class="dot" id="rtDot" r="7" cx="${first[0]}" cy="${first[1]}"/>`;
+  TW.pathEl = document.getElementById('rtFlow'); TW.dot = document.getElementById('rtDot');
+  TW.len = TW.pathEl.getTotalLength();
+  // where along the path each cube sits (search the closest length)
+  TW.nodeAt = pts.map(p => { let best = 0, bd = 1e9;
+    for(let L = 0; L <= TW.len; L += 4){ const q = TW.pathEl.getPointAtLength(L); const dd = (q.x-p[0])**2 + (q.y-p[1])**2; if(dd < bd){ bd = dd; best = L; } }
+    return best; });
+  rtPlaceDot();
+}
+function rtSetActive(i){
+  if(i === TW.active) return;
+  TW.active = i;
+  document.querySelectorAll('#rtGrid .rt-card').forEach((el,k) => el.classList.toggle('active', k === i));
+  document.querySelectorAll('#rtGrid .rt-cell').forEach((el,k) => el.classList.toggle('active', k === i));
+}
+function rtPlaceDot(now){
+  if(!TW.pathEl || !TW.dot) return;
+  const elapsed = TW.playing ? ((now || performance.now()) - TW.t0) : TW.pausedAt;
+  const L = ((elapsed % TW.LOOP_MS) / TW.LOOP_MS) * TW.len;
+  const q = TW.pathEl.getPointAtLength(L);
+  TW.dot.setAttribute('cx', q.x.toFixed(1)); TW.dot.setAttribute('cy', q.y.toFixed(1));
+  let a = 0; TW.nodeAt.forEach((n,k) => { if(L >= n - 6) a = k; });
+  rtSetActive(a);
+}
+function rtFrame(now){
+  TW.raf = null;
+  rtPlaceDot(now);
+  if(TW.playing && TW.visible && !document.hidden) TW.raf = requestAnimationFrame(rtFrame);
+}
+function twKick(){ if(!TW.raf && TW.playing) TW.raf = requestAnimationFrame(rtFrame); }
+function twSetPlaying(on){
+  const now = performance.now();
+  if(on && !TW.playing) TW.t0 = now - TW.pausedAt;
+  if(!on && TW.playing) TW.pausedAt = (now - TW.t0) % TW.LOOP_MS;
+  TW.playing = on;
+  const b = document.getElementById('twinPlay');
+  b.textContent = on ? '⏸ หยุดการเคลื่อนไหว' : '▶ เล่นการเคลื่อนไหว';
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  twKick();
+}
+
+/* ---------- Step pop-up ---------- */
+function openTwinStep(i){
+  const st = TWIN_STEPS[i], t = twStats(), n = TWIN_STEPS.length;
+  const body = document.getElementById('kpiModalBody');
+  body.className = '';
+  body.style.setProperty('--mk', `var(${st.c})`); body.style.setProperty('--c', `var(${st.c})`); body.style.setProperty('--c-ink', `var(${st.ink})`);
+  body.innerHTML = `
+    <div class="m-head">
+      <button type="button" class="m-close" data-close aria-label="ปิด">✕</button>
+      <div style="font-size:12.5px;opacity:.9;font-weight:600">ขั้นตอนที่ ${i+1} จาก ${n} · 🕒 ${st.when}</div>
+      <h2 id="kpiModalTitle" style="margin-top:4px">${st.icon} ${st.title}</h2>
+      <p>${st.desc}</p>
+    </div>
+    <div class="m-body">
+      <div><div class="m-sec-title">ตัวชี้วัดจากข้อมูลจริง<span class="m-sec-sub">คลิกแต่ละช่องเพื่อดูข้อมูลเพิ่มเติม</span></div>
+      <div class="sp-metrics">${twMetrics(i, t).map((m,k) => { const v = String(m[0]); const size = v.length > 16 ? ' long' : v.length > 10 ? ' mid' : '';
+        return `<button type="button" class="tp-m${size}" data-mstep="${i}" data-metric="${k}"><span class="tp-m-val">${escapeHtml(v)}</span><span class="tp-m-lab">${m[1]}</span><span class="tp-m-more">ดูข้อมูลเพิ่มเติม ›</span></button>`; }).join('')}</div></div>
+      ${twExample(i, t)}
+      <button class="tp-action" type="button" data-go="${st.action.go}">${st.action.label} →</button>
+      <div class="sp-nav"><button type="button" data-stepopen="${(i+n-1)%n}">← ${(i+n-1)%n+1}. ${TWIN_STEPS[(i+n-1)%n].short}</button>
+        <button type="button" data-stepopen="${(i+1)%n}">${(i+1)%n+1}. ${TWIN_STEPS[(i+1)%n].short} →</button></div>
+    </div>`;
+  const dlg = document.getElementById('kpiModal');
+  if(!dlg.open){ if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open',''); }
+  body.scrollTop = 0; dlg.scrollTop = 0;
   hideTip();
 }
 
 function renderTwin(){
-  if(!document.getElementById('twinSvg')) return;
-  if(!TW.built){
-    twBuild();
-    document.getElementById('twinSteps').addEventListener('click', e => { const b = e.target.closest('.tw-step'); if(b) twSelect(+b.dataset.step, true); });
-    document.getElementById('twinPanel').addEventListener('click', e => {
-      const mt = e.target.closest('[data-metric]'); if(mt) return openTwinMetric(TW.active, +mt.dataset.metric);
-      const s2 = e.target.closest('[data-step]'); if(s2) return twSelect(+s2.dataset.step, true);
-      const go = e.target.closest('[data-go]'); if(go) twGo(go.dataset.go);
-    });
-  }
+  const grid = document.getElementById('rtGrid'); if(!grid) return;
   const t = twStats();
-  TW.issueRate = t.days ? Math.max(.06, t.issueDays / t.days) : .12;
-  document.getElementById('twinLive').textContent = `จำลองจากข้อมูลจริง ${nf(t.days)} วันตรวจ · พบปัญหา ${Math.round(t.issueDays / Math.max(1,t.days) * 100)}%`;
-  twSetPlaying(TW.playing);
-  twSelect(TW.active, false);
+  const chips = [
+    ['--today','ลำดับการดำเนินงาน', `${TWIN_STEPS.length} ขั้นตอน`],
+    ['--info','วันที่ตรวจแล้ว', `${nf(t.days)} วัน`],
+    ['--issue','วันที่พบปัญหา', `${nf(t.issueDays)} วัน`],
+    ['--bad','แก้ไขเฉลี่ย', t.avgFix !== null ? `${t.avgFix} นาที` : '—'],
+    ['--ready','ความพร้อมล่าสุด', t.lastM && isNum(t.lastM.overall) ? `${t.lastM.overall}%` : '—'],
+  ];
+  document.getElementById('rtChips').innerHTML = chips.map(c => `<span class="rt-chip" style="--c:var(${c[0]})"><i></i>${c[1]} <b>${c[2]}</b></span>`).join('');
+  grid.innerHTML = rtCards(t);
+  if(!TW.built){
+    TW.built = true; TW.t0 = performance.now();
+    grid.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if(b) openTwinStep(+b.dataset.open); });
+    document.getElementById('twinPlay').addEventListener('click', () => twSetPlaying(!TW.playing));
+    document.getElementById('kpiModal').addEventListener('click', e => {
+      const m = e.target.closest('[data-mstep]'); if(m) return openTwinMetric(+m.dataset.mstep, +m.dataset.metric);
+      const so = e.target.closest('[data-stepopen]'); if(so) return openTwinStep(+so.dataset.stepopen);
+      const go = e.target.closest('[data-go]'); if(go){ closeKpi(); twGo(go.dataset.go); }
+    });
+    let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(rtDrawPath, 120); });
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(es => { TW.visible = es[0].isIntersecting; if(TW.visible) twKick(); }, {threshold:.05}).observe(document.getElementById('rtStage'));
+    }
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) twKick(); });
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(rtDrawPath);
+    twSetPlaying(TW.playing);
+  }
+  requestAnimationFrame(rtDrawPath);
 }
 
 /* =========================================================
