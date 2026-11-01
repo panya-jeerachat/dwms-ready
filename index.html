@@ -12,6 +12,26 @@
     document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
+<link rel="preconnect" href="https://docs.google.com" crossorigin>
+<script>
+  /* Kick off both Google Sheet downloads immediately, in parallel, while the
+     rest of the page is still being parsed. The main script picks these up. */
+  window.__DWMS_PREFETCH = (function(){
+    if(!window.fetch) return null;
+    var t = Date.now();
+    function get(id){
+      var p = fetch('https://docs.google.com/spreadsheets/d/' + id + '/export?format=csv&gid=0&_=' + t, {cache:'no-store'})
+        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+      p.catch(function(){});
+      return p;
+    }
+    return {at:t,
+      daily:   get('1N2A8-U3ynhY1tBnuJAAGGdTwSclEePQX_f84suEw5_k'),
+      monthly: get('1j7WzimYoBPJW4O87d3N2Xyy55GPxXJAdd203j-94yHk')};
+  })();
+  /* Hide data areas until the freshest available data is ready (see INIT). */
+  document.documentElement.classList.add('data-pending');
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -659,6 +679,19 @@
   .sp-nav button{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-secondary);}
   .sp-nav button:hover,.sp-nav button:focus-visible{color:var(--today-ink);text-decoration:underline;}
 
+  /* =========================================================
+     DATA LOADING STATE — never show stale numbers as if current
+     ========================================================= */
+  html.data-pending .dz{filter:blur(6px) saturate(.5);opacity:.4;pointer-events:none;user-select:none;}
+  .dz{transition:filter .35s ease,opacity .35s ease;}
+  .conn-bar{position:relative;overflow:hidden;}
+  .conn-bar.loading::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:35%;border-radius:3px;
+    background:linear-gradient(90deg,transparent,var(--today),transparent);animation:connLoad 1.1s ease-in-out infinite;}
+  @keyframes connLoad{from{transform:translateX(-100%);}to{transform:translateX(300%);}}
+  .conn-pulse.loading{background:var(--today);animation:twinBlink 1s ease-in-out infinite;}
+  .conn-spin{display:inline-block;animation:spinIt 1s linear infinite;margin-right:4px;}
+  @keyframes spinIt{to{transform:rotate(360deg);}}
+
   @media (prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
   }
@@ -987,14 +1020,29 @@ let monthlyByYm = {};
 let dataSource = 'snapshot'; // 'snapshot' | 'live' | 'partial'
 let lastSyncAt = null;
 
+// Everything derived from the data is built ONCE per data version here, so
+// render code never has to re-scan or re-sort the whole dataset.
+let DATA_VER = 0;
+let dailyByYm = {}, _sortedDates = [], _sortedYms = [];
+const _memo = {};
+function memo(key, fn){ const m = _memo[key]; if(m && m.v === DATA_VER) return m.val; const val = fn(); _memo[key] = {v:DATA_VER, val}; return val; }
 function indexData(){
-  dailyByDate = {}; DAILY.forEach(r => dailyByDate[r.date] = r);
-  monthlyByYm = {}; MONTHLY.forEach(r => monthlyByYm[r.ym] = r);
+  DATA_VER++;
+  dailyByDate = {}; dailyByYm = {};
+  DAILY.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  for(const r of DAILY){
+    r._st = undefined;
+    dailyByDate[r.date] = r;
+    (dailyByYm[r.date.slice(0,7)] || (dailyByYm[r.date.slice(0,7)] = [])).push(r);
+  }
+  monthlyByYm = {}; for(const r of MONTHLY) monthlyByYm[r.ym] = r;
+  _sortedDates = Object.keys(dailyByDate).sort();
+  _sortedYms = Object.keys(monthlyByYm).sort();
 }
 indexData();
 
-const sortedDates = () => Object.keys(dailyByDate).sort();
-const sortedYms = () => Object.keys(monthlyByYm).sort();
+const sortedDates = () => _sortedDates;
+const sortedYms = () => _sortedYms;
 
 function toKey(y,m,d){ return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 // Always open to the visitor's real current date (their browser clock) so
@@ -1011,6 +1059,10 @@ let selectedKey = todayKey;
 function beYear(ceYear){ return ceYear + 543; }
 function dayStatus(rec){
   if(!rec) return 'none';
+  if(rec._st !== undefined) return rec._st;
+  return (rec._st = computeDayStatus(rec));
+}
+function computeDayStatus(rec){
   let sawValue = false, anyIssue = false;
   for(const k of FACET_KEYS){
     const v = rec[k];
@@ -1032,40 +1084,48 @@ function facetStatus(v){
    ========================================================= */
 function renderKpiRow(){
   const totalDays = DAILY.length;
-  const paperTotal = 4 * totalDays;
-  const timeTotal = 60 * totalDays;
-  const powerOutages = DAILY.filter(r => r.power === 1).length;
-  const preventedTotal = DAILY.filter(r => r.auto_calc === 1).length;
-  const issueDurations = DAILY.filter(r => dayStatus(r) === 'issue' && r.duration_min !== null).map(r => r.duration_min);
-  const avgFix = issueDurations.length
-    ? Math.round((issueDurations.reduce((a,b) => a+b, 0) / issueDurations.length) * 100) / 100
-    : null;
-  document.getElementById('kpiPaper').textContent = paperTotal.toLocaleString('th-TH');
-  document.getElementById('kpiTime').textContent = timeTotal.toLocaleString('th-TH');
-  document.getElementById('kpiPower').textContent = powerOutages.toLocaleString('th-TH');
-  document.getElementById('kpiPrevented').textContent = preventedTotal.toLocaleString('th-TH');
-  document.getElementById('kpiAvgFix').textContent = avgFix !== null ? avgFix.toLocaleString('th-TH') : '—';
+  let power = 0, prevented = 0, fixSum = 0, fixN = 0;
+  for(const r of DAILY){
+    if(r.power === 1) power++;
+    if(r.auto_calc === 1) prevented++;
+    if(isNum(r.duration_min) && dayStatus(r) === 'issue'){ fixSum += r.duration_min; fixN++; }
+  }
+  const nfmt = v => v.toLocaleString('th-TH');
+  document.getElementById('kpiPaper').textContent = nfmt(4 * totalDays);
+  document.getElementById('kpiTime').textContent = nfmt(60 * totalDays);
+  document.getElementById('kpiPower').textContent = nfmt(power);
+  document.getElementById('kpiPrevented').textContent = nfmt(prevented);
+  document.getElementById('kpiAvgFix').textContent = fixN ? nfmt(Math.round(fixSum / fixN * 100) / 100) : '—';
 }
 
 /* =========================================================
    7) RENDER: connection bar
    ========================================================= */
+let isSyncing = false;
 function renderConnBar(){
+  const bar = document.querySelector('.conn-bar');
   const pulse = document.getElementById('connPulse');
   const text = document.getElementById('connText');
-
+  const t = lastSyncAt ? formatDateTime(lastSyncAt) : '';
+  bar.classList.toggle('loading', isSyncing);
   pulse.className = 'conn-pulse';
-  if(dataSource === 'live'){
+  if(isSyncing && dataSource === 'snapshot'){
+    pulse.classList.add('loading');
+    text.innerHTML = `<span class="conn-spin">⟳</span>กำลังโหลดข้อมูลล่าสุดจาก Google Sheet…`;
+  } else if(dataSource === 'cache'){
+    pulse.classList.add(isSyncing ? 'loading' : 'stale');
+    text.innerHTML = isSyncing
+      ? `แสดงข้อมูลล่าสุดที่โหลดไว้ ณ <b>${t}</b> · <span class="conn-spin">⟳</span>กำลังตรวจหาข้อมูลใหม่…`
+      : `เชื่อมต่อ Google Sheet ไม่สำเร็จ · แสดงข้อมูลล่าสุดที่โหลดไว้ ณ <b>${t}</b>`;
+  } else if(dataSource === 'live'){
     pulse.classList.add('live');
-    const t = lastSyncAt ? formatDateTime(lastSyncAt) : '';
-    text.innerHTML = `เชื่อมต่อ Google Sheet สดแล้ว (รายวัน + รายเดือน) · ซิงก์ล่าสุด <b>${t}</b>`;
+    text.innerHTML = `ข้อมูลปัจจุบันจาก Google Sheet (รายวัน + รายเดือน) · อัปเดตล่าสุด <b>${t}</b>${isSyncing ? ' · <span class="conn-spin">⟳</span>กำลังตรวจหาข้อมูลใหม่…' : ''}`;
   } else if(dataSource === 'partial'){
     pulse.classList.add('stale');
-    const t = lastSyncAt ? formatDateTime(lastSyncAt) : '';
-    text.innerHTML = `เชื่อมต่อสำเร็จบางส่วน · ซิงก์ล่าสุด <b>${t}</b> · ตรวจสอบลิงก์ที่ยังไม่สำเร็จในปุ่ม "เชื่อมข้อมูล"`;
+    text.innerHTML = `เชื่อมต่อสำเร็จบางส่วน · อัปเดตล่าสุด <b>${t}</b> · กดซิงก์อีกครั้งเพื่อลองใหม่`;
   } else {
     pulse.classList.add('off');
-    text.innerHTML = `ยังไม่ได้เชื่อมต่อ Google Sheet สด · แสดงข้อมูล snapshot ที่บันทึกไว้ในไฟล์ ณ <b>${SNAPSHOT_DATE}</b>`;
+    text.innerHTML = `เชื่อมต่อ Google Sheet ไม่สำเร็จ · แสดงข้อมูลสำรองในไฟล์ ณ <b>${SNAPSHOT_DATE}</b> ซึ่งอาจไม่เป็นปัจจุบัน · กดซิงก์เพื่อลองใหม่`;
   }
 }
 function formatDateTime(d){
@@ -1082,45 +1142,44 @@ function renderMonthTitle(){
 function renderCalendar(){
   renderMonthTitle();
   const grid = document.getElementById('dayGrid');
-  grid.innerHTML = '';
   const firstOfMonth = new Date(viewYear, viewMonth-1, 1);
   const startOffset = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
-  let counts = {ready:0, issue:0, none:0};
-
-  for(let i=0;i<startOffset;i++){
-    const blank = document.createElement('div'); blank.className = 'day-cell blank'; grid.appendChild(blank);
-  }
+  const counts = {ready:0, issue:0, none:0};
+  const label = {ready:'พร้อม', issue:'พบเหตุการณ์', none:'ไม่มีข้อมูล'};
+  const mName = `${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)}`;
+  let html = '<div class="day-cell blank"></div>'.repeat(startOffset);
   for(let d=1; d<=daysInMonth; d++){
     const key = toKey(viewYear, viewMonth, d);
-    const rec = dailyByDate[key];
-    const status = dayStatus(rec);
+    const status = dayStatus(dailyByDate[key]);
     counts[status]++;
-    const cell = document.createElement('div');
-    cell.className = `day-cell ${status}`;
-    if(key === todayKey) cell.classList.add('today');
-    if(key === selectedKey) cell.classList.add('selected');
-    cell.innerHTML = `<div class="num">${d}</div><div class="status-dot"></div>`;
-    cell.setAttribute('data-tip', 'day:' + key);
-    cell.setAttribute('tabindex', '0');
-    cell.setAttribute('role', 'button');
-    cell.setAttribute('aria-label', `${d} ${MONTHS_TH[viewMonth-1]} ${beYear(viewYear)} · ${status==='ready'?'พร้อม':status==='issue'?'พบเหตุการณ์':'ไม่มีข้อมูล'}`);
-    const pick = () => { selectedKey = key; renderCalendar(); renderDetail(); renderStreak(); hideTip(); };
-    cell.addEventListener('click', pick);
-    cell.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); const n = document.querySelector('.day-cell.selected'); if(n) n.focus(); } });
-    grid.appendChild(cell);
+    html += `<div class="day-cell ${status}${key === todayKey ? ' today' : ''}${key === selectedKey ? ' selected' : ''}" data-key="${key}" data-tip="day:${key}" tabindex="0" role="button" aria-label="${d} ${mName} · ${label[status]}"><div class="num">${d}</div><div class="status-dot"></div></div>`;
   }
+  grid.innerHTML = html;
   document.getElementById('monthSummary').innerHTML =
     `<span>🟢 พร้อม <b>${counts.ready}</b></span><span>🟡 พบเหตุการณ์ <b>${counts.issue}</b></span><span>⚪ ไม่มีข้อมูล <b>${counts.none}</b></span>`;
-
   renderTrend();
 }
+function pickDay(key, refocus){
+  selectedKey = key;
+  renderCalendar(); renderDetail(); renderStreak(); hideTip();
+  if(refocus){ const n = document.querySelector('.day-cell.selected'); if(n) n.focus(); }
+}
+(function(){
+  const grid = document.getElementById('dayGrid');
+  grid.addEventListener('click', e => { const c = e.target.closest('.day-cell[data-key]'); if(c) pickDay(c.dataset.key, false); });
+  grid.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const c = e.target.closest('.day-cell[data-key]'); if(!c) return;
+    e.preventDefault(); pickDay(c.dataset.key, true);
+  });
+})();
 
 /* =========================================================
    9) RENDER: monthly KPI trend panel (right column, top)
    ========================================================= */
 function avgDurationForMonth(ym){
-  const vals = DAILY.filter(d => d.date.startsWith(ym) && d.duration_min !== null).map(d => d.duration_min);
+  const vals = (dailyByYm[ym] || []).filter(d => d.duration_min !== null).map(d => d.duration_min);
   if(!vals.length) return null;
   const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
   return Math.round(avg * 100) / 100;
@@ -1405,54 +1464,44 @@ function escapeHtml(s){
 /* =========================================================
    11) RENDER: streak strip
    ========================================================= */
+let streakVer = -1;
 function renderStreak(){
   const container = document.getElementById('streakMonths');
-  container.innerHTML = '';
+  if(streakVer === DATA_VER){
+    const old = container.querySelector('.streak-cell.selected'); if(old) old.classList.remove('selected');
+    const cur = container.querySelector(`.streak-cell[data-key="${selectedKey}"]`); if(cur) cur.classList.add('selected');
+    return;
+  }
+  streakVer = DATA_VER;
   const dates = sortedDates();
+  if(!dates.length){ container.innerHTML = ''; return; }
   const first = dates[0].split('-').map(Number);
   const last = dates[dates.length-1].split('-').map(Number);
-
-  let y = first[0], m = first[1];
+  let y = first[0], m = first[1], guard = 0;
   const monthsHtml = [];
-  let guard = 0;
-  while((y < last[0] || (y === last[0] && m <= last[1])) && guard < 60){
-    guard++;
+  while((y < last[0] || (y === last[0] && m <= last[1])) && guard++ < 60){
     const daysInMonth = new Date(y, m, 0).getDate();
-    const firstOfMonth = new Date(y, m-1, 1);
-    const startOffset = (firstOfMonth.getDay() + 6) % 7;
-    let cellsHtml = '';
-    for(let i=0;i<startOffset;i++) cellsHtml += `<div class="streak-cell empty"></div>`;
+    const startOffset = (new Date(y, m-1, 1).getDay() + 6) % 7;
+    let cells = '<div class="streak-cell empty"></div>'.repeat(startOffset);
     for(let d=1; d<=daysInMonth; d++){
       const key = toKey(y,m,d);
-      const rec = dailyByDate[key];
-      const status = dayStatus(rec);
-      const cls = status === 'none' ? '' : status;
-      const sel = key === selectedKey ? ' selected' : '';
-      cellsHtml += `<div class="streak-cell ${cls}${sel}" data-key="${key}" data-tip="day:${key}"></div>`;
+      const status = dayStatus(dailyByDate[key]);
+      cells += `<div class="streak-cell ${status === 'none' ? '' : status}${key === selectedKey ? ' selected' : ''}" data-key="${key}" data-tip="day:${key}"></div>`;
     }
-    monthsHtml.push(`<div class="streak-month">
-        <div class="streak-month-label">${MONTHS_TH_SHORT[m-1]} ${String(beYear(y)).slice(-2)}</div>
-        <div class="streak-grid">${cellsHtml}</div>
-      </div>`);
-    m++; if(m>12){m=1;y++;}
+    monthsHtml.push(`<div class="streak-month"><div class="streak-month-label">${MONTHS_TH_SHORT[m-1]} ${String(beYear(y)).slice(-2)}</div><div class="streak-grid">${cells}</div></div>`);
+    m++; if(m > 12){ m = 1; y++; }
   }
   container.innerHTML = monthsHtml.join('');
-
-  container.querySelectorAll('.streak-cell[data-key]').forEach(el => {
-    el.addEventListener('click', () => {
-      const key = el.getAttribute('data-key');
-      const [yy,mm] = key.split('-').map(Number);
-      viewYear = yy; viewMonth = mm; selectedKey = key;
-      renderCalendar(); renderDetail(); renderStreak();
-    });
-  });
-
   const latest = DAILY[DAILY.length-1];
   document.getElementById('streakMeta').innerHTML =
     latest && latest.continuous_days !== null
-      ? `วันให้บริการต่อเนื่อง <b>${latest.continuous_days}</b> วันโดยไม่เกิดเหตุขัดข้องระหว่างเรียน`
-      : '';
+      ? `วันให้บริการต่อเนื่อง <b>${latest.continuous_days}</b> วันโดยไม่เกิดเหตุขัดข้องระหว่างเรียน` : '';
 }
+document.getElementById('streakMonths').addEventListener('click', e => {
+  const el = e.target.closest('.streak-cell[data-key]'); if(!el) return;
+  const key = el.dataset.key; const [yy,mm] = key.split('-').map(Number);
+  viewYear = yy; viewMonth = mm; pickDay(key, false);
+});
 
 function renderAll(){
   indexData();
@@ -1485,49 +1534,96 @@ function toDirectCsvUrl(url){
 
 async function fetchCsv(url){
   const fetchUrl = toDirectCsvUrl(url) + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
-  const res = await fetch(fetchUrl, {cache:'no-store'});
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.text();
+  const ctrl = 'AbortController' in window ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), 20000) : null;
+  try{
+    const res = await fetch(fetchUrl, {cache:'no-store', signal: ctrl ? ctrl.signal : undefined});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.text();
+  } finally { if(timer) clearTimeout(timer); }
 }
 
-async function syncFromSheets(){
+/* Cheap fingerprint of the raw CSV so an unchanged sheet costs no re-parse/re-render. */
+function textSig(t){ let h = 5381; for(let i=0;i<t.length;i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return t.length + ':' + h; }
+let dataSig = {daily:null, monthly:null};
+
+/* Last good data is kept in the browser so a returning visitor sees current
+   numbers instantly, instead of the old snapshot bundled in this file. */
+const LS_CACHE = 'dwms_irc_cache_v1';
+function saveCache(){
+  try{
+    localStorage.setItem(LS_CACHE, JSON.stringify({
+      at: lastSyncAt ? lastSyncAt.toISOString() : new Date().toISOString(),
+      daily: DAILY.map(({_st, ...r}) => r), monthly: MONTHLY, hints: FACET_HINTS, sig: dataSig}));
+  }catch(e){}
+}
+function loadCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem(LS_CACHE) || 'null');
+    if(!c || !Array.isArray(c.daily) || !c.daily.length || !Array.isArray(c.monthly)) return null;
+    const lastOf = a => a.reduce((m,r) => r.date > m ? r.date : m, '');
+    if(lastOf(c.daily) < lastOf(EMBEDDED_DAILY)) return null;   // the bundled file is newer
+    return c;
+  }catch(e){ return null; }
+}
+
+let firstSyncDone = false;
+function revealData(){ document.documentElement.classList.remove('data-pending'); }
+
+async function syncFromSheets(opts){
+  if(isSyncing) return;
+  isSyncing = true;
   const syncBtn = document.getElementById('syncBtn');
   syncBtn.disabled = true;
   syncBtn.innerHTML = `<span class="spin">⟳</span> กำลังซิงก์…`;
+  renderConnBar();
 
-  let dailyOk = false, monthlyOk = false;
+  // Use the downloads already started in <head> (first load only), otherwise fetch both sheets in parallel.
+  const pre = window.__DWMS_PREFETCH; window.__DWMS_PREFETCH = null;
+  const usePre = pre && !(opts && opts.force) && (Date.now() - pre.at) < 60000;
+  const [dRes, mRes] = await Promise.allSettled([
+    usePre ? pre.daily : fetchCsv(DEFAULT_DAILY_URL),
+    usePre ? pre.monthly : fetchCsv(DEFAULT_MONTHLY_URL),
+  ]);
 
-  try{
-    const text = await fetchCsv(DEFAULT_DAILY_URL);
-    const { records, hints } = rowsToDailyRecords(parseCsvText(text));
-    if(records.length){
-      DAILY = records; dailyOk = true;
-      if(hints) Object.assign(FACET_HINTS, hints);
+  let dailyOk = false, monthlyOk = false, changed = false;
+  if(dRes.status === 'fulfilled'){
+    const sig = textSig(dRes.value);
+    if(sig === dataSig.daily) dailyOk = true;
+    else {
+      const { records, hints } = rowsToDailyRecords(parseCsvText(dRes.value));
+      if(records.length){ DAILY = records; dailyOk = true; changed = true; dataSig.daily = sig; if(hints) Object.assign(FACET_HINTS, hints); }
     }
-  } catch(err){ /* keep previous data on failure */ }
+  }
+  if(mRes.status === 'fulfilled'){
+    const sig = textSig(mRes.value);
+    if(sig === dataSig.monthly) monthlyOk = true;
+    else {
+      const records = rowsToMonthlyRecords(parseCsvText(mRes.value));
+      if(records.length){ MONTHLY = records; monthlyOk = true; changed = true; dataSig.monthly = sig; }
+    }
+  }
 
-  try{
-    const text = await fetchCsv(DEFAULT_MONTHLY_URL);
-    const records = rowsToMonthlyRecords(parseCsvText(text));
-    if(records.length){ MONTHLY = records; monthlyOk = true; }
-  } catch(err){ /* keep previous data on failure */ }
-
-  if(dailyOk && monthlyOk){ dataSource = 'live'; }
-  else if(dailyOk || monthlyOk){ dataSource = 'partial'; }
-  else { dataSource = dataSource === 'live' ? 'partial' : 'snapshot'; }
+  if(dailyOk && monthlyOk) dataSource = 'live';
+  else if(dailyOk || monthlyOk) dataSource = 'partial';
+  else if(dataSource === 'live' || dataSource === 'partial') dataSource = 'partial';
+  // otherwise stay on 'cache' or 'snapshot'
 
   if(dailyOk || monthlyOk){
     lastSyncAt = new Date();
     try{ localStorage.setItem(LS_LAST_SYNC, lastSyncAt.toISOString()); }catch(e){}
+    if(changed) saveCache();
   }
 
-  renderAll();
-
+  isSyncing = false;
+  if(changed) renderAll(); else renderConnBar();
+  firstSyncDone = true;
+  revealData();
   syncBtn.disabled = false;
   syncBtn.innerHTML = '🔄 ซิงก์ข้อมูลล่าสุด';
 }
 
-document.getElementById('syncBtn').addEventListener('click', () => syncFromSheets());
+document.getElementById('syncBtn').addEventListener('click', () => syncFromSheets({force:true}));
 
 document.getElementById('prevBtn').addEventListener('click', () => {
   viewMonth--; if(viewMonth < 1){ viewMonth = 12; viewYear--; }
@@ -1566,7 +1662,7 @@ function tipMonth(ym){
   const r = monthlyByYm[ym]; if(!r) return '';
   const lvl = levelCls(r.overall);
   const chipCls = lvl === 'good' ? 'ready' : lvl === 'mid' ? 'issue' : lvl === 'low' ? 'low' : 'none';
-  const days = DAILY.filter(d => d.date.startsWith(ym));
+  const days = (dailyByYm[ym] || []);
   const issueDays = days.filter(d => dayStatus(d) === 'issue').length;
   let h = `<div class="tip-title">${ymLong(ym)} <span class="chip ${chipCls}">${isNum(r.overall) ? r.overall + '%' : '—'}</span></div>`;
   if(isNum(r.change)) h += `<div class="tip-row"><span>เทียบเดือนก่อน</span><b>${r.change > 0 ? '▲' : r.change < 0 ? '▼' : ''} ${Math.abs(r.change)}%</b></div>`;
@@ -1579,7 +1675,7 @@ function tipMonth(ym){
 function tipFacet(ym, key){
   const f = FACETS.find(x => x.key === key); const r = monthlyByYm[ym]; if(!f || !r) return '';
   const p = prevYmOf(ym); const pv = p ? monthlyByYm[p][key] : null;
-  const days = DAILY.filter(d => d.date.startsWith(ym) && d[key] === 1).length;
+  const days = (dailyByYm[ym] || []).filter(d => d[key] === 1).length;
   let h = `<div class="tip-title">${f.label}</div>`;
   if(FACET_HINTS[key]) h += `<div class="tip-row"><span>${FACET_HINTS[key]}</span></div>`;
   h += `<div class="tip-row"><span>${ymShort(ym)}</span><b>${isNum(r[key]) ? r2(r[key]) + '%' : '—'}</b></div>`;
@@ -1631,7 +1727,8 @@ document.getElementById('trendPanel').addEventListener('click', e => {
 });
 
 /* ---------- KPI pop-up ---------- */
-function monthAggs(){
+function monthAggs(){ return memo('aggs', _monthAggs); }
+function _monthAggs(){
   const map = {};
   DAILY.forEach(r => {
     const ym = r.date.slice(0,7);
@@ -1795,7 +1892,8 @@ const TW = {active:0, playing:true, built:false, reduce:false, raf:null, visible
 TW.reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(TW.reduce) TW.playing = false;
 
-function twStats(){
+function twStats(){ return memo('twStats', _twStats); }
+function _twStats(){
   const days = DAILY.length;
   const issue = DAILY.filter(r => dayStatus(r) === 'issue');
   const ready = DAILY.filter(r => dayStatus(r) === 'ready').length;
@@ -1819,7 +1917,7 @@ function twMetrics(i, t){
   const L = t.latest;
   switch(i){
     case 0: return [[t.days + ' วัน','ตรวจแล้วทั้งหมด'],[t.points ? nf(t.points) : '9 ด้าน', t.points ? 'ห้อง/จุดที่ตรวจต่อรอบ' : 'ระบบที่ตรวจ'],[L ? dateShort(L.date) : '—','ตรวจล่าสุด']];
-    case 1: return [[nf(t.days),'ชุดข้อมูลดิจิทัล'],[nf(4*t.days),'แผ่นกระดาษที่ลดได้'],[dataSource === 'live' ? 'Sheet สด' : 'Snapshot','แหล่งข้อมูลปัจจุบัน']];
+    case 1: return [[nf(t.days),'ชุดข้อมูลดิจิทัล'],[nf(4*t.days),'แผ่นกระดาษที่ลดได้'],[dataSource === 'live' ? 'Sheet สด' : dataSource === 'cache' ? 'ข้อมูลล่าสุด' : 'Snapshot','แหล่งข้อมูลปัจจุบัน']];
     case 2: return [[t.lastM && isNum(t.lastM.overall) ? t.lastM.overall + '%' : '—', 'ความพร้อม ' + (t.lastYm ? ymShort(t.lastYm) : '')],[nf(t.ready),'วันพร้อมครบทุกด้าน'],[nf(t.issueDays),'วันที่พบปัญหา']];
     case 3: return [[t.avgFix !== null ? String(t.avgFix) : '—','เวลาแก้ไขเฉลี่ย (นาที)'],[nf(t.before830),'ครั้งที่แก้ทันก่อน 08:30'],[nf(t.prevented),'ครั้งที่ป้องกันเหตุได้']];
     case 4: return [[L && isNum(L.continuous_days) ? nf(L.continuous_days) : '—','วันให้บริการต่อเนื่อง'],[t.onPlan !== null ? t.onPlan + '%' : '—','วันที่สอนได้ตามแผน'],[nf(t.classInc),'เหตุขัดข้องระหว่างเรียน']];
@@ -1887,7 +1985,7 @@ function twMonthBlocks(ym){
 function twMetricDetail(i, k, t){
   const aggs = monthAggs();
   const per = fn => aggs.map(a => ({ym:a.ym, v: fn(a.ym, a)}));
-  const daysIn = ym => DAILY.filter(d => d.date.startsWith(ym));
+  const daysIn = ym => (dailyByYm[ym] || []);
   const L = t.latest;
   const key = i + '-' + k;
   switch(key){
@@ -1908,10 +2006,10 @@ function twMetricDetail(i, k, t){
       body: twBarsHtml(per((ym,a) => a.days), 'ชุด')};
     case '1-1': return {desc:`คำนวณ 4 แผ่นต่อวันตรวจ รวม ${nf(4*t.days)} แผ่น เทียบเท่าประมาณ ${(4*t.days/500).toFixed(1)} รีม`,
       body: twBarsHtml(per((ym,a) => a.paper), 'แผ่น')};
-    case '1-2': return {desc: dataSource === 'live'
+    case '1-2': return {desc: dataSource === 'live' || dataSource === 'cache'
         ? 'หน้านี้เชื่อมต่อ Google Sheet สดแล้ว ข้อมูลรายวันและรายเดือนมาจากแหล่งเดียวกับที่ทีมบันทึก'
         : 'ขณะนี้แสดงข้อมูลชุดสำรอง (snapshot) ที่บันทึกไว้ในไฟล์ เพราะยังเชื่อมต่อ Google Sheet สดไม่ได้ กดปุ่มซิงก์เพื่อดึงข้อมูลล่าสุด',
-      body: `<dl class="m-kv"><dt>สถานะ</dt><dd>${dataSource === 'live' ? 'เชื่อมต่อสด' : dataSource === 'partial' ? 'เชื่อมต่อบางส่วน' : 'Snapshot ในไฟล์'}</dd>
+      body: `<dl class="m-kv"><dt>สถานะ</dt><dd>${dataSource === 'live' ? 'เชื่อมต่อสด' : dataSource === 'cache' ? 'ข้อมูลที่โหลดไว้ล่าสุด' : dataSource === 'partial' ? 'เชื่อมต่อบางส่วน' : 'Snapshot ในไฟล์'}</dd>
         <dt>ข้อมูล ณ</dt><dd>${lastSyncAt ? formatDateTime(lastSyncAt) : SNAPSHOT_DATE}</dd>
         <dt>ข้อมูลรายวัน</dt><dd>${nf(DAILY.length)} วัน</dd><dt>สรุปรายเดือน</dt><dd>${nf(MONTHLY.length)} เดือน</dd></dl>`};
     case '2-0': return {desc:`ความพร้อมภาพรวมของ${t.lastYm ? ymLong(t.lastYm) : 'เดือนล่าสุด'} (เดือนล่าสุดที่ข้อมูลครบ) คำนวณจากสัดส่วนด้านที่พร้อมใช้งาน`,
@@ -2152,8 +2250,37 @@ function renderTwin(){
 /* =========================================================
    14) INIT
    ========================================================= */
-renderAll();
-syncFromSheets(); // auto-connect to the live DWMS sheets on load
+// Areas that hold data are hidden (blurred) until current data is ready.
+document.querySelectorAll('section.streak, .board, #narrativePanel, #trendPanel, section.rt, .kpi-row').forEach(el => el.classList.add('dz'));
+
+(function init(){
+  const cache = loadCache();
+  if(cache){
+    // Returning visitor: show the last data loaded from the Sheet right away,
+    // then refresh silently in the background.
+    DAILY = cache.daily; MONTHLY = cache.monthly;
+    Object.assign(FACET_HINTS, cache.hints || {});
+    dataSig = cache.sig || dataSig;
+    lastSyncAt = new Date(cache.at);
+    dataSource = 'cache';
+    renderAll();
+    revealData();
+  } else {
+    // First visit: build the page but keep numbers hidden until the Sheet
+    // arrives. If it can't be reached, reveal the bundled snapshot, clearly labelled.
+    renderAll();
+    setTimeout(() => { if(!firstSyncDone){ revealData(); renderConnBar(); } }, 12000);
+  }
+  syncFromSheets();
+
+  // Keep the page current: re-check when the visitor comes back to the tab,
+  // and every 10 minutes while it stays open and visible.
+  const STALE_MS = 5 * 60 * 1000;
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && (!lastSyncAt || Date.now() - lastSyncAt.getTime() > STALE_MS)) syncFromSheets({force:true});
+  });
+  setInterval(() => { if(!document.hidden) syncFromSheets({force:true}); }, 10 * 60 * 1000);
+})();
 </script>
 </body>
 </html>
